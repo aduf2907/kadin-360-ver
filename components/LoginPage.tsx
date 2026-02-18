@@ -14,24 +14,23 @@ const LoginPage: React.FC<LoginPageProps> = ({ setCurrentPage }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
-    if (!email || !password) {
-      setError("Please enter both email and password.");
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError("Email atau password salah. Silakan coba lagi.");
+      setIsLoading(false);
       return;
     }
-
-    setIsLoading(true);
-
-    // Simulate API login delay
-    setTimeout(() => {
-      setIsLoading(false);
-      // In a real app, you would validate credentials here
-      setCurrentPage("Dashboard");
-    }, 1500);
+    setIsLoading(false);
+    setCurrentPage("Dashboard");
   };
 
   return (
@@ -59,16 +58,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ setCurrentPage }) => {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+          {error && (
+            <div className="p-3 bg-red-100 text-red-800 rounded-md text-sm">
+              {error}
+            </div>
+          )}
           <div className="rounded-md shadow-sm -space-y-px">
             <div className="mb-4">
               <label
-                htmlFor="email-address"
+                htmlFor="email"
                 className="block text-sm font-medium text-kadin-light-slate mb-1"
               >
-                Email address
+                Email
               </label>
               <input
-                id="email-address"
+                id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
@@ -86,17 +90,25 @@ const LoginPage: React.FC<LoginPageProps> = ({ setCurrentPage }) => {
               >
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-600 placeholder-gray-500 text-kadin-white bg-kadin-navy focus:outline-none focus:ring-1 focus:ring-kadin-gold focus:border-kadin-gold focus:z-10 sm:text-sm"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-600 placeholder-gray-500 text-kadin-white bg-kadin-navy focus:outline-none focus:ring-1 focus:ring-kadin-gold focus:border-kadin-gold focus:z-10 sm:text-sm"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-kadin-gold"
+                >
+                  <EyeIcon className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -125,12 +137,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ setCurrentPage }) => {
               </a>
             </div>
           </div>
-
-          {error && (
-            <div className="text-red-400 text-sm text-center bg-red-500/10 p-2 rounded-md border border-red-500/20">
-              {error}
-            </div>
-          )}
 
           <div>
             <button
