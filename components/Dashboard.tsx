@@ -4,6 +4,7 @@ import { NewsArticle, Page, UserProfile, ActivityEvent } from "../types";
 import NewsIcon from "./icons/NewsIcon";
 import { generateDashboardInsights } from "../services/geminiService";
 import ChatbotIcon from "./icons/ChatbotIcon";
+import { useNews } from "@/src/hooks/useNews";
 
 const ChevronRightIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -254,6 +255,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
   const [isLoadingInsights, setIsLoadingInsights] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activityLog, setActivityLog] = useState<ActivityEvent[]>([]);
+  const { news, loading } = useNews(3);
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -547,9 +549,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
         </Card>
 
         <div className="md:col-span-2">
-          <Card title="KADIN News" onClick={() => setCurrentPage("Knowledge")}>
+          <Card title="KADIN News" onClick={() => setCurrentPage("News")}>
             <div className="space-y-4">
-              {mockNews.map((item) => (
+              {news.map((item) => (
                 <div key={item.id} className="flex items-start space-x-3">
                   <div className="flex-shrink-0 pt-1">
                     <NewsIcon className="h-5 w-5 text-kadin-gold" />
@@ -559,7 +561,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
                       {item.title}
                     </h4>
                     <p className="text-xs text-kadin-slate">
-                      {item.category} - {item.date}
+                      {item.category} -{" "}
+                      {new Date(item.published_at).toLocaleDateString("id-ID")}
                     </p>
                   </div>
                 </div>

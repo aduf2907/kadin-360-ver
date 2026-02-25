@@ -11,6 +11,7 @@ import SecretariatIcon from "./icons/SecretariatIcon";
 import KADINersRoomsIcon from "./icons/KADINersRoomsIcon";
 import NewsIcon from "./icons/NewsIcon";
 import MitraIcon from "./icons/MitraIcon";
+import { useNews } from "@/src/hooks/useNews";
 
 interface BerandaProps {
   setCurrentPage: (page: Page) => void;
@@ -173,6 +174,7 @@ const Beranda: React.FC<BerandaProps> = ({ setCurrentPage }) => {
   const [heroAnimationState, setHeroAnimationState] = useState<
     "enter" | "exit"
   >("enter");
+  const { news, loading } = useNews(3);
 
   useEffect(() => {
     const heroImageInterval = setInterval(() => {
@@ -339,13 +341,6 @@ const Beranda: React.FC<BerandaProps> = ({ setCurrentPage }) => {
                   />
                 </svg>
               </a>
-              {/* <button
-                onClick={() => setCurrentPage("Gabung Sekarang")}
-                className="px-6 py-3 bg-kadin-gold text-kadin-navy font-bold rounded-lg shadow hover:bg-yellow-400 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center text-sm"
-              >
-                <span>Gabung Sekarang</span> */}
-
-              {/* </button> */}
               <button
                 onClick={() => setCurrentPage("Login")}
                 className="px-6 py-3 bg-transparent border-2 border-kadin-slate text-kadin-white font-bold rounded-lg hover:border-kadin-white hover:bg-white/5 transition-colors flex items-center justify-center text-sm"
@@ -467,7 +462,7 @@ const Beranda: React.FC<BerandaProps> = ({ setCurrentPage }) => {
           {/* KADIN News */}
           <div
             className="bg-kadin-light-navy p-6 rounded-lg border border-gray-700 cursor-pointer hover:border-kadin-gold/50 transition-all duration-300 transform hover:-translate-y-0.5 group shadow-lg"
-            onClick={() => setCurrentPage("Knowledge")}
+            onClick={() => setCurrentPage("News")}
           >
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-kadin-white transition-colors duration-200 group-hover:text-kadin-gold">
@@ -476,7 +471,7 @@ const Beranda: React.FC<BerandaProps> = ({ setCurrentPage }) => {
               <a
                 onClick={(e) => {
                   e.stopPropagation();
-                  setCurrentPage("Knowledge");
+                  setCurrentPage("News");
                 }}
                 className="text-xs text-kadin-gold hover:underline cursor-pointer font-bold"
               >
@@ -484,30 +479,34 @@ const Beranda: React.FC<BerandaProps> = ({ setCurrentPage }) => {
               </a>
             </div>
             <div className="space-y-4">
-              {mockNews.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-start space-x-4 group/item cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentPage("Knowledge");
-                  }}
-                >
-                  <div className="flex-shrink-0 pt-1">
-                    <div className="bg-kadin-navy p-2 rounded-md border border-gray-700 group-hover/item:border-kadin-gold/30 transition-colors">
-                      <NewsIcon className="h-4 w-4 text-kadin-gold" />
+              {!loading &&
+                news.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-start space-x-4 group/item cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentPage("News");
+                    }}
+                  >
+                    <div className="flex-shrink-0 pt-1">
+                      <div className="bg-kadin-navy p-2 rounded-md border border-gray-700 group-hover/item:border-kadin-gold/30 transition-colors">
+                        <NewsIcon className="h-4 w-4 text-kadin-gold" />
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-kadin-white group-hover/item:text-kadin-gold text-xs leading-snug">
+                        {item.title}
+                      </h4>
+                      <p className="text-[10px] text-kadin-slate mt-1">
+                        {item.category} •{" "}
+                        {new Date(item.published_at).toLocaleDateString(
+                          "id-ID",
+                        )}
+                      </p>
                     </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-kadin-white group-hover/item:text-kadin-gold text-xs leading-snug">
-                      {item.title}
-                    </h4>
-                    <p className="text-[10px] text-kadin-slate mt-1">
-                      {item.category} • {item.date}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 

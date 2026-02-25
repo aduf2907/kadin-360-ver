@@ -23,6 +23,7 @@ import ProjectOpportunitiesIcon from "./icons/ProjectOpportunitiesIcon";
 import BonafiditasIcon from "./icons/BonafiditasIcon";
 import EventManagementIcon from "./icons/EventManagementIcon";
 import ActivitiesManagementIcon from "./icons/ActivitiesManagementIcon";
+import NewsIcon from "./icons/NewsIcon";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -140,6 +141,11 @@ export const navCategories: NavCategory[] = [
     title: "Insights",
     color: "text-yellow-400",
     items: [
+      {
+        page: "News",
+        icon: <NewsIcon className="h-6 w-6" />,
+        label: "News & Updates",
+      },
       {
         page: "Knowledge",
         icon: <KnowledgeIcon className="h-6 w-6" />,

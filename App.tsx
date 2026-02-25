@@ -41,6 +41,7 @@ import EventManagement from "./components/EventManagement";
 import ActivitiesManagement from "./components/ActivitiesManagement";
 import EventDetails from "./components/EventDetails";
 import ProjectDetail from "./components/ProjectDetail";
+import NewsPage from "./components/News";
 import supabase from "./src/supabase-client";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
@@ -222,6 +223,8 @@ const App: React.FC = () => {
         return <Communication />;
       case "Knowledge":
         return <Knowledge />;
+      case "News":
+        return <NewsPage />;
       case "Matching":
         return <Matching />;
       case "Insight":
@@ -326,22 +329,6 @@ const App: React.FC = () => {
       </div>
     );
   }
-
-  // return (
-  //     <div className="bg-kadin-navy text-kadin-slate min-h-screen flex">
-  //         <Sidebar isOpen={isSidebarOpen} currentPage={currentPage} setCurrentPage={setCurrentPage} toggleSidebar={toggleSidebar} user={user} />
-  //         <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out">
-  //             <Header toggleSidebar={toggleSidebar} setCurrentPage={setCurrentPage} handleLogout={handleLogout} />
-  //             <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-  //                 <Breadcrumb currentPage={currentPage} setCurrentPage={setCurrentPage} />
-  //                 {renderPage()}
-  //             </main>
-  //             <PromoCarousel setCurrentPage={setCurrentPage} />
-  //             <Footer currentPage={currentPage} setCurrentPage={setCurrentPage} />
-  //         </div>
-  //         <AIChatbot userProfile={user} logUserActivity={logUserActivity} />
-  //     </div>
-  // );
 
   return (
     <div className="bg-kadin-navy text-kadin-slate min-h-screen flex flex-col overflow-x-hidden">
