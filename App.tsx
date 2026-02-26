@@ -64,22 +64,7 @@ const App: React.FC = () => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   // Initial User State (Akan diupdate setelah fetch database)
-  const [user, setUser] = useState<UserProfile>({
-    id: 0, // Akan diupdate dengan UUID string dari Supabase
-    name: "Memuat...",
-    company: "...",
-    role: "...",
-    avatar: "https://picsum.photos/100",
-    industry: "...",
-    region: "...",
-    interests: [],
-    isAiRecommended: false,
-    level: "Active",
-    membershipId: "...",
-    validThru: "...",
-    bonafidityStatus: "Yellow",
-    rating: 0,
-  });
+  const [user, setUser] = useState<UserProfile>();
 
   /**
    * FETCH USER PROFILE DARI DATABASE:
@@ -99,23 +84,23 @@ const App: React.FC = () => {
         console.log("Membuat profil baru untuk user...");
       } else if (data) {
         // Map data dari database ke format State aplikasi
-        setUser({
-          id: data.id,
-          name: data.name || "User Baru",
-          company: data.company || "Belum diisi",
-          role: data.role || "Member",
-          avatar: data.avatar_url || "https://picsum.photos/100",
-          industry: data.industry || "Umum",
-          region: data.region || "Jakarta",
-          interests: data.interests || [],
-          isAiRecommended: false,
-          level: data.membership_type || "Active",
-          membershipId: "KDN-" + data.id.substring(0, 8).toUpperCase(),
-          validThru: "12/25",
-          bio: data.bio,
-          bonafidityStatus: data.bonafidity_status || "Yellow",
-          rating: data.rating || 50,
-        });
+        // setUser({
+        //   id: data.id,
+        //   name: data.name || "User Baru",
+        //   company: data.company || "Belum diisi",
+        //   role: data.role || "Member",
+        //   avatar: data.avatar_url || "https://picsum.photos/100",
+        //   industry: data.industry || "Umum",
+        //   region: data.region || "Jakarta",
+        //   interests: data.interests || [],
+        //   isAiRecommended: false,
+        //   level: data.membership_type || "Active",
+        //   membershipId: "KDN-" + data.id.substring(0, 8).toUpperCase(),
+        //   validThru: "12/25",
+        //   bio: data.bio,
+        //   bonafidityStatus: data.bonafidity_status || "Yellow",
+        //   rating: data.rating || 50,
+        // });
       }
     } catch (err) {
       console.error("Gagal mengambil profil:", err);

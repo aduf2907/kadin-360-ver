@@ -24,6 +24,7 @@ import BonafiditasIcon from "./icons/BonafiditasIcon";
 import EventManagementIcon from "./icons/EventManagementIcon";
 import ActivitiesManagementIcon from "./icons/ActivitiesManagementIcon";
 import NewsIcon from "./icons/NewsIcon";
+import { useUserProfile } from "@/src/hooks/useUserProfile";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -219,6 +220,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   user,
 }) => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const { profile, setProfile, loading } = useUserProfile();
 
   // Otomatis buka kategori yang berisi halaman aktif
   useEffect(() => {
@@ -296,18 +298,18 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => setCurrentPage("Profile")}
             >
               <img
-                src={user.avatar}
-                alt={user.name}
+                src={profile?.avatar_url}
+                alt={profile?.name}
                 className="h-12 w-12 rounded-full border-2 border-kadin-gold/50 flex-shrink-0"
               />
               <div
                 className={`min-w-0 hidden ${isDashboard ? "lg:block" : "lg:group-hover:block"}`}
               >
                 <h4 className="font-bold text-kadin-white group-hover/profile:text-kadin-gold transition-colors truncate">
-                  {user.name}
+                  {profile?.name}
                 </h4>
                 <p className="text-xs text-kadin-slate truncate">
-                  {user.company}
+                  {profile?.company}
                 </p>
               </div>
             </div>

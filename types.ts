@@ -76,13 +76,14 @@ export interface UserProfile {
   name: string;
   company: string;
   role: string;
-  avatar: string;
+  avatar_url: string;
   industry: string;
   region: string;
   interests: string[];
   isAiRecommended: boolean;
   level: "Premium" | "Verified" | "Active" | "New";
   membershipId: string;
+  membership_type: string;
   validThru: string;
   bio?: string;
   bonafidityStatus: "Green" | "Yellow" | "Red" | "Black";
