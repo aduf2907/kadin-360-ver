@@ -64,36 +64,95 @@ const App: React.FC = () => {
     useState<ProjectOpportunity | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-  // Mock user profile data
+  // Initial User State (Akan diupdate setelah fetch database)
   const [user, setUser] = useState<UserProfile>({
-    id: 100,
-    name: "Budi Santoso",
-    company: "PT. Digital Maju Bersama",
-    role: "Founder & CEO",
+    id: 0, // Akan diupdate dengan UUID string dari Supabase
+    name: "Memuat...",
+    company: "...",
+    role: "...",
     avatar: "https://picsum.photos/100",
-    industry: "Technology",
-    region: "Jakarta",
-    interests: ["AI", "Fintech", "SaaS", "E-commerce"],
+    industry: "...",
+    region: "...",
+    interests: [],
     isAiRecommended: false,
     level: "Active",
-    membershipId: "KDN-12345678",
-    validThru: "12/25",
-    bio: "Visionary entrepreneur with over 15 years of experience in the technology sector. Passionate about leveraging AI and digital solutions to solve real-world problems. Actively seeking collaboration in fintech and sustainable tech.",
-    bonafidityStatus: "Green",
-    rating: 92,
-    reviews: [
-      {
-        id: 1,
-        reviewerId: 2,
-        reviewerName: "Andi Wijaya",
-        reviewerAvatar: "https://picsum.photos/id/1027/40/40",
-        rating: 5,
-        comment:
-          "Budi is a true visionary. Our collaboration on the logistics platform was seamless and highly productive. Highly recommended.",
-        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ],
+    membershipId: "...",
+    validThru: "...",
+    bonafidityStatus: "Yellow",
+    rating: 0,
   });
+
+  /**
+   * FETCH USER PROFILE DARI DATABASE:
+   * Fungsi ini mengambil data dari tabel 'users' berdasarkan ID user yang login.
+   * Jika data belum ada (misal baru register), kita bisa buatkan row default.
+   */
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (error && error.code === "PGRST116") {
+        // Kasus: User baru pertama kali login, row di tabel 'users' belum ada.
+        console.log("Membuat profil baru untuk user...");
+      } else if (data) {
+        // Map data dari database ke format State aplikasi
+        setUser({
+          id: data.id,
+          name: data.name || "User Baru",
+          company: data.company || "Belum diisi",
+          role: data.role || "Member",
+          avatar: data.avatar_url || "https://picsum.photos/100",
+          industry: data.industry || "Umum",
+          region: data.region || "Jakarta",
+          interests: data.interests || [],
+          isAiRecommended: false,
+          level: data.membership_type || "Active",
+          membershipId: "KDN-" + data.id.substring(0, 8).toUpperCase(),
+          validThru: "12/25",
+          bio: data.bio,
+          bonafidityStatus: data.bonafidity_status || "Yellow",
+          rating: data.rating || 50,
+        });
+      }
+    } catch (err) {
+      console.error("Gagal mengambil profil:", err);
+    }
+  };
+
+  // Mock user profile data
+  // const [user, setUser] = useState<UserProfile>({
+  //   id: 100,
+  //   name: "Budi Santoso",
+  //   company: "PT. Digital Maju Bersama",
+  //   role: "Founder & CEO",
+  //   avatar: "https://picsum.photos/100",
+  //   industry: "Technology",
+  //   region: "Jakarta",
+  //   interests: ["AI", "Fintech", "SaaS", "E-commerce"],
+  //   isAiRecommended: false,
+  //   level: "Active",
+  //   membershipId: "KDN-12345678",
+  //   validThru: "12/25",
+  //   bio: "Visionary entrepreneur with over 15 years of experience in the technology sector. Passionate about leveraging AI and digital solutions to solve real-world problems. Actively seeking collaboration in fintech and sustainable tech.",
+  //   bonafidityStatus: "Green",
+  //   rating: 92,
+  //   reviews: [
+  //     {
+  //       id: 1,
+  //       reviewerId: 2,
+  //       reviewerName: "Andi Wijaya",
+  //       reviewerAvatar: "https://picsum.photos/id/1027/40/40",
+  //       rating: 5,
+  //       comment:
+  //         "Budi is a true visionary. Our collaboration on the logistics platform was seamless and highly productive. Highly recommended.",
+  //       date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  //     },
+  //   ],
+  // });
 
   useEffect(() => {
     const initAuth = async () => {
