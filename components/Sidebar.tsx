@@ -193,11 +193,6 @@ export const navCategories: NavCategory[] = [
         label: "Business Advisor",
       },
       {
-        page: "Event Management",
-        icon: <EventManagementIcon className="h-6 w-6" />,
-        label: "Event Management",
-      },
-      {
         page: "Activities Management",
         icon: <ActivitiesManagementIcon className="h-6 w-6" />,
         label: "Activities Management",

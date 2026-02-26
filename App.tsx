@@ -37,7 +37,6 @@ import UpgradePage from "./components/UpgradePage";
 import ProjectOpportunities from "./components/ProjectOpportunities";
 import DocumentHub from "./components/DocumentHub";
 import Bonafiditas from "./components/Bonafiditas";
-import EventManagement from "./components/EventManagement";
 import ActivitiesManagement from "./components/ActivitiesManagement";
 import EventDetails from "./components/EventDetails";
 import ProjectDetail from "./components/ProjectDetail";
@@ -347,10 +346,8 @@ const App: React.FC = () => {
       case "Activities Management":
         return <ActivitiesManagement />;
       case "Event Details":
-        return selectedEvent ? (
+        return (
           <EventDetails event={selectedEvent} setCurrentPage={setCurrentPage} />
-        ) : (
-          <EventManagement setCurrentPage={setCurrentPage} />
         );
       case "Project Details":
         return selectedProject ? (
