@@ -29,7 +29,8 @@ export type Page =
   | "Bonafiditas"
   | "Event Management"
   | "Activities Management"
-  | "Event Details";
+  | "Event Details"
+  | "Events";
 
 export interface NewsArticle {
   id: number;
@@ -233,6 +234,7 @@ export interface Sponsor {
 
 export interface KadinEvent {
   id: number;
+  title?: string;
   name: string;
   date: string;
   location: string;

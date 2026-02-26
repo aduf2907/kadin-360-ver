@@ -42,6 +42,7 @@ import ActivitiesManagement from "./components/ActivitiesManagement";
 import EventDetails from "./components/EventDetails";
 import ProjectDetail from "./components/ProjectDetail";
 import NewsPage from "./components/News";
+import Events from "./components/Events";
 import supabase from "./src/supabase-client";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
@@ -182,9 +183,6 @@ const App: React.FC = () => {
 
     if (page === "Event Details" && payload) {
       setSelectedEvent(payload as KadinEvent);
-    } else if (page !== "Event Details") {
-      // Clear event when navigating away
-      setSelectedEvent(null);
     }
 
     if (page === "Project Details" && payload) {
@@ -279,8 +277,14 @@ const App: React.FC = () => {
         return <DocumentHub />;
       case "Bonafiditas":
         return <Bonafiditas user={user} />;
-      case "Event Management":
-        return <EventManagement setCurrentPage={setCurrentPage} />;
+      case "Event Details":
+        return selectedEvent ? (
+          <EventDetails event={selectedEvent} setCurrentPage={setCurrentPage} />
+        ) : (
+          <Events setCurrentPage={setCurrentPage} />
+        );
+      case "Events":
+        return <Events setCurrentPage={setCurrentPage} />;
       case "Activities Management":
         return <ActivitiesManagement />;
       case "Event Details":

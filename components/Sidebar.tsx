@@ -105,6 +105,11 @@ export const navCategories: NavCategory[] = [
         label: "Community",
       },
       {
+        page: "Events",
+        icon: <EventManagementIcon className="h-6 w-6" />,
+        label: "Agenda & Event",
+      },
+      {
         page: "Member Directory",
         icon: <DirectoryIcon className="h-6 w-6" />,
         label: "Member Directory",

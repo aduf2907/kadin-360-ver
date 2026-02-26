@@ -5,6 +5,7 @@ import NewsIcon from "./icons/NewsIcon";
 import { generateDashboardInsights } from "../services/geminiService";
 import ChatbotIcon from "./icons/ChatbotIcon";
 import { useNews } from "@/src/hooks/useNews";
+import { useEvents } from "@/src/hooks/useEvents";
 
 const ChevronRightIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -255,7 +256,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
   const [isLoadingInsights, setIsLoadingInsights] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activityLog, setActivityLog] = useState<ActivityEvent[]>([]);
-  const { news, loading } = useNews(3);
+  const { news } = useNews(3);
+  const { events } = useEvents(3);
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -442,24 +444,26 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
           </Card>
         </div>
 
-        <Card
-          title="Upcoming Events"
-          onClick={() => setCurrentPage("Community")}
-        >
-          <ul className="space-y-3">
-            <li className="flex justify-between items-center text-sm">
-              <span>Digital Transformation Summit</span>
-              <span className="font-semibold text-kadin-light-slate">
-                Oct 28
-              </span>
-            </li>
-            <li className="flex justify-between items-center text-sm">
-              <span>Investor Networking Night</span>
-              <span className="font-semibold text-kadin-light-slate">
-                Nov 05
-              </span>
-            </li>
-          </ul>
+        <Card title="Upcoming Events" onClick={() => setCurrentPage("Events")}>
+          {events.length === 0 ? (
+            <p className="text-sm text-kadin-slate italic">
+              Belum ada event selanjutnya.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {events.map((event) => (
+                <li
+                  key={event.id}
+                  className="flex justify-between items-center text-sm"
+                >
+                  <span>{event.title}</span>
+                  <span className="font-semibold text-kadin-light-slate">
+                    {event.date}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
 
         <Card
