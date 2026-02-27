@@ -6,6 +6,7 @@ import { generateDashboardInsights } from "../services/geminiService";
 import ChatbotIcon from "./icons/ChatbotIcon";
 import { useNews } from "@/src/hooks/useNews";
 import { useEvents } from "@/src/hooks/useEvents";
+import { useMatching } from "@/src/hooks/useMarching";
 
 const ChevronRightIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -258,6 +259,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
   const [activityLog, setActivityLog] = useState<ActivityEvent[]>([]);
   const { news } = useNews(3);
   const { events } = useEvents(3);
+  const { partners, loading } = useMatching();
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -521,35 +523,30 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
           onClick={() => setCurrentPage("Matching")}
         >
           <ul className="space-y-3">
-            <li className="flex items-center text-sm">
-              <img
-                src="https://picsum.photos/id/1012/50/50"
-                className="h-8 w-8 rounded-full mr-3"
-                alt="partner"
-              />
-              <div>
-                <p className="font-semibold text-kadin-white">
-                  PT. Maju Logistik
-                </p>
-                <p className="text-xs text-kadin-slate">Technology | Jakarta</p>
-              </div>
-            </li>
-            <li className="flex items-center text-sm">
-              <img
-                src="https://picsum.photos/id/1013/50/50"
-                className="h-8 w-8 rounded-full mr-3"
-                alt="partner"
-              />
-              <div>
-                <p className="font-semibold text-kadin-white">
-                  Agro Makmur Sejahtera
-                </p>
-                <p className="text-xs text-kadin-slate">
-                  Agriculture | Surabaya
-                </p>
-              </div>
-            </li>
+            {(partners ?? []).slice(0, 3).map((partner) => (
+              <li key={partner.id} className="flex items-center text-sm">
+                <img
+                  src={partner.avatar_url || "https://picsum.photos/50"}
+                  className="h-8 w-8 rounded-full mr-3 object-cover"
+                  alt={partner.company}
+                />
+                <div>
+                  <p className="font-semibold text-kadin-white">
+                    {partner.company}
+                  </p>
+                  <p className="text-xs text-kadin-slate">
+                    {partner.industry} | {partner.region}
+                  </p>
+                </div>
+              </li>
+            ))}
           </ul>
+
+          {(partners ?? []).length === 0 && (
+            <p className="text-sm text-kadin-slate">
+              No recommendations available.
+            </p>
+          )}
         </Card>
 
         <div className="md:col-span-2">
