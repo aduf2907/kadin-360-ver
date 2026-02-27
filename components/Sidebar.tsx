@@ -38,6 +38,7 @@ export interface NavItem {
   page: Page;
   icon: React.ReactElement<{ className?: string }>;
   label: string;
+  adminOnly?: boolean;
 }
 
 export interface NavCategory {
@@ -199,6 +200,12 @@ export const navCategories: NavCategory[] = [
         label: "Activities Management",
       },
       {
+        page: "Project Management",
+        icon: <ProjectOpportunitiesIcon className="h-6 w-6" />,
+        label: "Project Management",
+        adminOnly: true,
+      },
+      {
         page: "Bonafiditas",
         icon: <BonafiditasIcon className="h-6 w-6" />,
         label: "User Bonafidity",
@@ -319,6 +326,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
           <ul>
             {navCategories.map((category, index) => {
+              const filteredItems = category.items.filter((item) => {
+                if (item.adminOnly) {
+                  return profile && profile.is_admin === true;
+                }
+                return true;
+              });
+              if (filteredItems.length === 0) return null;
+
               const isExpanded = expandedCategory === category.title;
               const hasActiveItem = category.items.some(
                 (i) => i.page === currentPage,

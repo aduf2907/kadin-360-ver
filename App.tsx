@@ -43,6 +43,7 @@ import ProjectDetail from "./components/ProjectDetail";
 import NewsPage from "./components/News";
 import Events from "./components/Events";
 import supabase from "./src/supabase-client";
+import ProjectManagement from "./components/ProjectManagement";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
 const LAST_PAGE_KEY = "kadin360-last-visited-page";
@@ -80,63 +81,21 @@ const App: React.FC = () => {
         .single();
 
       if (error && error.code === "PGRST116") {
-        // Kasus: User baru pertama kali login, row di tabel 'users' belum ada.
         console.log("Membuat profil baru untuk user...");
-      } else if (data) {
-        // Map data dari database ke format State aplikasi
-        // setUser({
-        //   id: data.id,
-        //   name: data.name || "User Baru",
-        //   company: data.company || "Belum diisi",
-        //   role: data.role || "Member",
-        //   avatar: data.avatar_url || "https://picsum.photos/100",
-        //   industry: data.industry || "Umum",
-        //   region: data.region || "Jakarta",
-        //   interests: data.interests || [],
-        //   isAiRecommended: false,
-        //   level: data.membership_type || "Active",
-        //   membershipId: "KDN-" + data.id.substring(0, 8).toUpperCase(),
-        //   validThru: "12/25",
-        //   bio: data.bio,
-        //   bonafidityStatus: data.bonafidity_status || "Yellow",
-        //   rating: data.rating || 50,
-        // });
+        return;
+      }
+
+      if (data) {
+        setUser({
+          ...data,
+          interests: data.interests ?? [],
+          is_admin: !!data.is_admin,
+        });
       }
     } catch (err) {
       console.error("Gagal mengambil profil:", err);
     }
   };
-
-  // Mock user profile data
-  // const [user, setUser] = useState<UserProfile>({
-  //   id: 100,
-  //   name: "Budi Santoso",
-  //   company: "PT. Digital Maju Bersama",
-  //   role: "Founder & CEO",
-  //   avatar: "https://picsum.photos/100",
-  //   industry: "Technology",
-  //   region: "Jakarta",
-  //   interests: ["AI", "Fintech", "SaaS", "E-commerce"],
-  //   isAiRecommended: false,
-  //   level: "Active",
-  //   membershipId: "KDN-12345678",
-  //   validThru: "12/25",
-  //   bio: "Visionary entrepreneur with over 15 years of experience in the technology sector. Passionate about leveraging AI and digital solutions to solve real-world problems. Actively seeking collaboration in fintech and sustainable tech.",
-  //   bonafidityStatus: "Green",
-  //   rating: 92,
-  //   reviews: [
-  //     {
-  //       id: 1,
-  //       reviewerId: 2,
-  //       reviewerName: "Andi Wijaya",
-  //       reviewerAvatar: "https://picsum.photos/id/1027/40/40",
-  //       rating: 5,
-  //       comment:
-  //         "Budi is a true visionary. Our collaboration on the logistics platform was seamless and highly productive. Highly recommended.",
-  //       date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  //     },
-  //   ],
-  // });
 
   useEffect(() => {
     const initAuth = async () => {
@@ -345,6 +304,8 @@ const App: React.FC = () => {
         );
       default:
         return <Beranda setCurrentPage={setCurrentPage} />;
+      case "Project Management":
+        return <ProjectManagement />;
     }
   };
 

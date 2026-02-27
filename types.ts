@@ -30,7 +30,8 @@ export type Page =
   | "Event Management"
   | "Activities Management"
   | "Event Details"
-  | "Events";
+  | "Events"
+  | "Project Management";
 
 export interface NewsArticle {
   id: number;
@@ -76,7 +77,8 @@ export interface UserProfile {
   name: string;
   company: string;
   role: string;
-  avatar_url: string;
+  is_admin?: boolean;
+  avatar_url?: string;
   industry: string;
   region: string;
   interests: string[];
