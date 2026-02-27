@@ -206,6 +206,12 @@ export const navCategories: NavCategory[] = [
         adminOnly: true,
       },
       {
+        page: "Franchise Management",
+        icon: <FranchiseIcon className="h-6 w-6" />,
+        label: "Franchise Management",
+        adminOnly: true,
+      },
+      {
         page: "Bonafiditas",
         icon: <BonafiditasIcon className="h-6 w-6" />,
         label: "User Bonafidity",

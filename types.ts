@@ -14,6 +14,7 @@ export type Page =
   | "Community"
   | "My Story"
   | "Franchise"
+  | "Franchise Management"
   | "Secretariat"
   | "HalloHukum"
   | "Business Advisor"
@@ -152,12 +153,20 @@ export interface MyStoryPost {
 }
 
 export interface FranchiseOpportunity {
-  id: number;
+  id: number | string;
   name: string;
   category: string;
   investment: string;
   imageUrl: string;
   description: string;
+  location?: string;
+  established?: string;
+  outlets?: string;
+  contact?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
 }
 
 export interface KadinPartner {
