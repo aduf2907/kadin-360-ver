@@ -102,28 +102,15 @@ const App: React.FC = () => {
   useEffect(() => {
     const initAuth = async () => {
       setIsAuthChecking(true);
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       if (session) {
-        // Jika sudah login, izinkan akses ke halaman privat yang tersimpan
-        const publicPages: Page[] = ["Beranda", "Login", "Gabung Sekarang"];
-        if (publicPages.includes(currentPage)) {
-          setCurrentPage("Dashboard");
-        }
-        if (session.user.email) {
-          setUser((prev) => ({
-            ...prev,
-            name: session.user.email?.split("@")[0] || prev.name,
-          }));
-        }
-      } else {
-        // Jika tidak login, paksa ke Beranda (kecuali sedang di halaman registrasi)
-        if (currentPage !== "Gabung Sekarang" && currentPage !== "Login") {
-          setCurrentPage("Beranda");
-        }
+        await fetchUserProfile(session.user.id);
       }
+
       setIsAuthChecking(false);
     };
 
@@ -131,16 +118,20 @@ const App: React.FC = () => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        if (
-          currentPage === "Beranda" ||
-          currentPage === "Login" ||
-          currentPage === "Gabung Sekarang"
-        ) {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        await fetchUserProfile(session.user.id);
+
+        const savedPage = localStorage.getItem(LAST_PAGE_KEY);
+
+        // Login pertama kali
+        if (!savedPage) {
           setCurrentPage("Dashboard");
         }
-      } else {
+      }
+
+      if (event === "SIGNED_OUT") {
+        localStorage.removeItem(LAST_PAGE_KEY);
         setCurrentPage("Beranda");
       }
     });
