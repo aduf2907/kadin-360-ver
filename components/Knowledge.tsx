@@ -1,378 +1,507 @@
-import React, { useState, useEffect } from 'react';
-import { Article } from '../types';
-import { generateKnowledgeArticle } from '../services/geminiService';
+import React, { useState } from "react";
+import { KnowledgeEntry, UserProfile } from "../types";
+import { useKnowledge } from "@/src/hooks/useKnowledge";
+import supabase from "@/src/supabase-client";
 
-// Simple AI icon for the card badge
-const AiIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 11.25l.6-1.2 1.2-.6-1.2-.6-.6-1.2-.6 1.2-1.2.6 1.2.6.6 1.2z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.25 8.25l.4-.8.8-.4-.8-.4-.4-.8-.4.8-.8.4.8.4.4.8z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2V7a2 2 0 012-2h6l2-2h2l-2 2z" />
-    </svg>
+// Icons
+const PlusIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M12 4v16m8-8H4"
+    />
+  </svg>
 );
 
-const BookmarkIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-    </svg>
+const KnowledgeCard: React.FC<{
+  entry: KnowledgeEntry;
+  onClick: () => void;
+}> = ({ entry, onClick }) => (
+  <div
+    onClick={onClick}
+    className="bg-kadin-light-navy rounded-xl overflow-hidden border border-gray-700 hover:border-kadin-gold/50 transition-all group flex flex-col h-full shadow-lg cursor-pointer"
+  >
+    <div className="relative h-48 overflow-hidden">
+      <img
+        src={entry.image_url}
+        alt={entry.title}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+        referrerPolicy="no-referrer"
+      />
+      <div className="absolute top-3 left-3">
+        <span className="bg-kadin-navy/80 backdrop-blur-md text-kadin-gold text-[10px] font-bold px-2.5 py-1 rounded-full border border-kadin-gold/20 uppercase tracking-wider">
+          {entry.category}
+        </span>
+      </div>
+    </div>
+    <div className="p-5 flex flex-col flex-1">
+      <h3 className="text-lg font-bold text-kadin-white mb-2 group-hover:text-kadin-gold transition-colors line-clamp-2">
+        {entry.title}
+      </h3>
+      <p className="text-sm text-kadin-slate line-clamp-3 mb-4 flex-1">
+        {entry.content}
+      </p>
+      <div className="flex items-center justify-between pt-4 border-t border-gray-700/50 mt-auto">
+        <div className="flex items-center gap-2">
+          <img
+            src={entry.author_avatar}
+            alt={entry.author_name}
+            className="w-6 h-6 rounded-full border border-gray-600"
+          />
+          <span className="text-xs text-kadin-slate font-medium">
+            {entry.author_name}
+          </span>
+        </div>
+        <span className="text-[10px] text-kadin-slate/60">
+          {new Date(entry.created_at).toLocaleDateString()}
+        </span>
+      </div>
+    </div>
+  </div>
 );
 
+const Knowledge: React.FC<{ user: UserProfile }> = ({ user }) => {
+  const { entries, loading, addEntry } = useKnowledge(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<KnowledgeEntry | null>(
+    null,
+  );
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
-const mockArticles: Article[] = [
-    { id: 1, title: 'Mastering International Trade Agreements', category: 'E-Learning', summary: 'An interactive module on navigating complex trade laws and leveraging them for business growth.', imageUrl: 'https://picsum.photos/seed/knowledge1/400/200' },
-    { id: 2, title: 'The Future of Green Technology Investment', category: 'Whitepaper', summary: 'In-depth analysis of emerging trends and opportunities in the sustainable technology sector.', imageUrl: 'https://picsum.photos/seed/knowledge2/400/200' },
-    { id: 3, title: 'Digital Marketing for SMEs in 2024', category: 'Article', summary: 'Best practices and actionable strategies for small and medium enterprises to enhance their online presence.', imageUrl: 'https://picsum.photos/seed/knowledge3/400/200' },
-    { id: 4, title: 'New Government Regulation on Digital Tax', category: 'Regulation', summary: 'A comprehensive summary and breakdown of the latest tax regulations affecting digital businesses.', imageUrl: 'https://picsum.photos/seed/knowledge4/400/200' },
-];
+  const [newEntry, setNewEntry] = useState({
+    title: "",
+    category: "Article",
+    content: "",
+    image_url: "",
+  });
 
-/**
- * Calculates the Levenshtein distance between two strings.
- * This is a measure of the difference between two sequences.
- * @param s1 The first string.
- * @param s2 The second string.
- * @returns The Levenshtein distance.
- */
-const levenshteinDistance = (s1: string, s2: string): number => {
-    s1 = s1.toLowerCase();
-    s2 = s2.toLowerCase();
+  const categories = [
+    "All",
+    "Article",
+    "E-Learning",
+    "Whitepaper",
+    "Regulation",
+    "Case Study",
+  ];
 
-    const costs = new Array();
-    for (let i = 0; i <= s1.length; i++) {
-        let lastValue = i;
-        for (let j = 0; j <= s2.length; j++) {
-            if (i == 0) {
-                costs[j] = j;
-            } else {
-                if (j > 0) {
-                    let newValue = costs[j - 1];
-                    if (s1.charAt(i - 1) != s2.charAt(j - 1)) {
-                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                    }
-                    costs[j - 1] = lastValue;
-                    lastValue = newValue;
-                }
-            }
-        }
-        if (i > 0)
-            costs[s2.length] = lastValue;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `knowledge/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("knowledge")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("knowledge").getPublicUrl(filePath);
+
+      setNewEntry((prev) => ({ ...prev, image_url: publicUrl }));
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Failed to upload image");
+    } finally {
+      setIsUploading(false);
     }
-    return costs[s2.length];
-};
+  };
 
-/**
- * Performs a fuzzy search to check if a query matches a text.
- * It splits the query into tokens and checks if each token has a fuzzy match in the text.
- * @param query The search string.
- * @param text The text to search within.
- * @returns True if it's a match, false otherwise.
- */
-const fuzzySearch = (query: string, text: string): boolean => {
-    const queryTokens = query.toLowerCase().split(' ').filter(t => t);
-    if (queryTokens.length === 0) return true;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEntry.title || !newEntry.content) return;
 
-    const textTokens = text.toLowerCase().split(/[\s,.\-_]+/);
-
-    return queryTokens.every(qToken => {
-        return textTokens.some(tToken => {
-            // Allow more distance for longer words to be more forgiving.
-            // e.g., length 1-4: 0 typos, 5-8: 1 typo, 9+: 2 typos
-            const allowedDistance = Math.floor((qToken.length - 1) / 4);
-            // Also check for prefix matching for "search-as-you-type" feel
-            return tToken.startsWith(qToken) || levenshteinDistance(qToken, tToken) <= allowedDistance;
-        });
+    setIsSaving(true);
+    const result = await addEntry({
+      ...newEntry,
+      author_id: user.id.toString(),
     });
-};
 
+    if (result.success) {
+      setIsModalOpen(false);
+      setNewEntry({
+        title: "",
+        category: "Article",
+        content: "",
+        image_url: "",
+      });
+      alert(
+        "Knowledge submitted successfully! It will be visible after admin approval.",
+      );
+    } else {
+      alert("Failed to submit knowledge: " + result.error);
+    }
+    setIsSaving(false);
+  };
 
-const ArticleCard: React.FC<{ article: Article; isSaved: boolean }> = ({ article, isSaved }) => {
-    const priorityStyles: { [key in 'High' | 'Medium' | 'Low']: string } = {
-        High: 'bg-red-500/20 text-red-300',
-        Medium: 'bg-yellow-500/20 text-yellow-300',
-        Low: 'bg-blue-500/20 text-blue-300',
-    };
-    
-    return (
-        <div className="bg-kadin-light-navy rounded-lg overflow-hidden border border-gray-700 transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer hover:border-kadin-gold/50 group" onClick={() => alert(`Navigating to article: ${article.title}`)}>
-            <div className="relative">
-                <img src={article.imageUrl} alt={article.title} className="w-full h-40 object-cover"/>
-                {article.category === 'AI Generated' && (
-                    <div className="absolute top-2 right-2 flex items-center bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs font-semibold backdrop-blur-sm">
-                        <AiIcon className="h-4 w-4 mr-1"/>
-                        AI Generated
-                    </div>
-                )}
-                 {isSaved && (
-                    <div className="absolute top-2 left-2 flex items-center bg-green-500/20 text-green-300 px-2 py-1 rounded-full text-xs font-semibold backdrop-blur-sm">
-                        <BookmarkIcon className="h-4 w-4 mr-1"/>
-                        Saved
-                    </div>
-                )}
-            </div>
-            <div className="p-4">
-                 <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-semibold ${article.category === 'AI Generated' ? 'text-blue-400 bg-blue-500/10' : 'text-kadin-gold bg-kadin-gold/10'} px-2 py-1 rounded-full`}>{article.category}</span>
-                    {article.priority && (
-                         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${priorityStyles[article.priority]}`}>
-                            {article.priority} Priority
-                        </span>
-                    )}
-                </div>
-                <h3 className="text-lg font-bold mt-2 text-kadin-white transition-colors duration-200 group-hover:text-kadin-gold">{article.title}</h3>
-                <p className="text-sm mt-2 text-kadin-slate">{article.summary}</p>
-            </div>
-        </div>
-    );
-};
+  const filteredEntries = entries.filter((entry) => {
+    const matchesSearch =
+      entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.content.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "All" || entry.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
-
-const Knowledge: React.FC = () => {
-    const [articles, setArticles] = useState<Article[]>(mockArticles);
-    const [prompt, setPrompt] = useState('');
-    const [audience, setAudience] = useState('SMEs');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [savedArticleIds, setSavedArticleIds] = useState<Set<number>>(new Set());
-    const [lastGeneratedArticle, setLastGeneratedArticle] = useState<Article | null>(null);
-    const [activeTab, setActiveTab] = useState('All');
-    const [sortBy, setSortBy] = useState<'Default' | 'Priority'>('Default');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedQuery, setDebouncedQuery] = useState('');
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedQuery(searchQuery);
-        }, 300);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [searchQuery]);
-    
-    const examplePrompts = [
-        'The future of renewable energy in Indonesia',
-        'Impact of e-commerce on SMEs',
-        'Strategies for digital transformation in manufacturing',
-    ];
-
-    const handleGenerate = async () => {
-        setIsLoading(true);
-        setError(null);
-        setLastGeneratedArticle(null);
-        try {
-            const generatedContent = await generateKnowledgeArticle(prompt, audience);
-            const newArticle: Article = {
-                id: Date.now(),
-                title: generatedContent.title,
-                category: 'AI Generated',
-                summary: generatedContent.summary,
-                imageUrl: `https://picsum.photos/seed/ai${Date.now()}/400/200`,
-            };
-            setArticles(prevArticles => [newArticle, ...prevArticles]);
-            setLastGeneratedArticle(newArticle);
-            setPrompt('');
-        } catch (e: any) {
-            setError(e.message);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSave = () => {
-        if (!lastGeneratedArticle) return;
-        setSavedArticleIds(prev => new Set(prev).add(lastGeneratedArticle.id));
-        setLastGeneratedArticle(null);
-    };
-
-    const handleSetPriority = (articleId: number, priority: 'High' | 'Medium' | 'Low') => {
-        setArticles(prevArticles =>
-            prevArticles.map(article =>
-                article.id === articleId ? { ...article, priority } : article
-            )
-        );
-        if (lastGeneratedArticle && lastGeneratedArticle.id === articleId) {
-            setLastGeneratedArticle(prev => prev ? { ...prev, priority } : null);
-        }
-    };
-
-    const tabCategories = ['All', 'Saved', 'E-Learning', 'Articles', 'Whitepapers', 'Regulation', 'AI Generated'];
-    
-    const priorityOrder: { [key in 'High' | 'Medium' | 'Low']: number } = { 'High': 1, 'Medium': 2, 'Low': 3 };
-
-    const displayedArticles = articles
-        .filter(article => {
-             // Filter by search query first
-            if (debouncedQuery) {
-                const searchableText = [article.title, article.summary, article.category].join(' ');
-                if (!fuzzySearch(debouncedQuery, searchableText)) {
-                    return false;
-                }
-            }
-            // Then filter by tab
-            if (activeTab === 'Saved') return savedArticleIds.has(article.id);
-            if (activeTab === 'All') return true;
-            return article.category === activeTab;
-        })
-        .sort((a, b) => {
-            if (sortBy === 'Priority') {
-                const priorityA = a.priority ? priorityOrder[a.priority] : 4;
-                const priorityB = b.priority ? priorityOrder[b.priority] : 4;
-                return priorityA - priorityB;
-            }
-            return 0; // Default sort is newest first, handled by prepending.
-        });
-
-
-    return (
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h2 className="text-3xl font-bold text-kadin-white mb-6">Knowledge & Learning</h2>
-            
-            <div className="bg-kadin-light-navy p-6 rounded-lg border border-gray-700 mb-8">
-                <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0 bg-kadin-navy p-3 rounded-full border border-kadin-gold/20">
-                         <AiIcon className="h-8 w-8 text-kadin-gold" />
-                    </div>
-                    <div>
-                        <h3 className="text-2xl font-bold text-kadin-white">AI Content Generator</h3>
-                        <p className="text-kadin-slate text-sm">
-                            Generate a new article summary using AI based on a topic of your choice.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="mt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="md:col-span-2">
-                            <label htmlFor="topic-prompt" className="block text-sm font-medium text-kadin-light-slate mb-1">Enter Topic</label>
-                            <textarea
-                                id="topic-prompt"
-                                className="w-full bg-kadin-navy p-3 rounded-md focus:outline-none focus:ring-1 focus:ring-kadin-gold text-sm transition-colors"
-                                rows={3}
-                                placeholder="e.g., The impact of AI on the Indonesian logistics industry"
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                disabled={isLoading}
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="audience" className="block text-sm font-medium text-kadin-light-slate mb-1">Target Audience</label>
-                            <select
-                                id="audience"
-                                value={audience}
-                                onChange={(e) => setAudience(e.target.value)}
-                                disabled={isLoading}
-                                className="w-full bg-kadin-navy p-3 rounded-md focus:outline-none focus:ring-1 focus:ring-kadin-gold text-sm"
-                            >
-                                <option>SMEs</option>
-                                <option>Executives</option>
-                                <option>General Public</option>
-                            </select>
-                            <p className="text-xs text-kadin-slate mt-2">Helps the AI tailor the article's tone and focus.</p>
-                        </div>
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-medium text-kadin-slate self-center">
-                            Or try an example:
-                        </span>
-                        {examplePrompts.map((p) => (
-                            <button
-                                key={p}
-                                onClick={() => setPrompt(p)}
-                                disabled={isLoading}
-                                className="text-xs bg-kadin-navy hover:bg-kadin-gold hover:text-kadin-navy text-kadin-light-slate px-3 py-1 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {p}
-                            </button>
-                        ))}
-                    </div>
-
-                    {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
-                    
-                    <button
-                        onClick={handleGenerate}
-                        disabled={isLoading || !prompt.trim()}
-                        className="mt-4 w-full md:w-auto bg-kadin-gold text-kadin-navy font-bold py-2 px-6 rounded-md hover:bg-yellow-400 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center"
-                    >
-                        {isLoading && (
-                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        )}
-                        {isLoading ? 'Generating...' : 'Generate Article'}
-                    </button>
-                </div>
-                 {lastGeneratedArticle && (
-                    <div className="mt-4 p-4 bg-kadin-navy rounded-md border border-kadin-gold/50">
-                        <h4 className="font-bold text-kadin-white">Successfully Generated: <span className="text-kadin-gold">"{lastGeneratedArticle.title}"</span></h4>
-                        <p className="text-sm text-kadin-slate mt-1">{lastGeneratedArticle.summary}</p>
-                         <div className="flex flex-wrap items-center gap-4 mt-4">
-                             <button 
-                                onClick={handleSave} 
-                                className="flex items-center bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-500 transition-colors"
-                            >
-                                <BookmarkIcon className="h-5 w-5 mr-2"/>
-                                Save Article for Later
-                            </button>
-                            {!lastGeneratedArticle.priority && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm font-semibold text-kadin-light-slate">Set Priority:</span>
-                                    <button onClick={() => handleSetPriority(lastGeneratedArticle.id, 'High')} className="text-xs font-bold py-1 px-3 rounded-full bg-red-500/20 text-red-300 hover:bg-red-500/40">High</button>
-                                    <button onClick={() => handleSetPriority(lastGeneratedArticle.id, 'Medium')} className="text-xs font-bold py-1 px-3 rounded-full bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/40">Medium</button>
-                                    <button onClick={() => handleSetPriority(lastGeneratedArticle.id, 'Low')} className="text-xs font-bold py-1 px-3 rounded-full bg-blue-500/20 text-blue-300 hover:bg-blue-500/40">Low</button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-            
-             <div className="bg-kadin-light-navy/50 p-4 rounded-lg border border-gray-700 mb-6 flex flex-col md:flex-row gap-4 items-center">
-                <input 
-                    type="text" 
-                    placeholder="Search articles by keyword, title, or category..." 
-                    className="flex-grow bg-kadin-navy p-3 rounded-md focus:outline-none focus:ring-1 focus:ring-kadin-gold text-sm w-full"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-            </div>
-
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-                <div className="flex space-x-1 sm:space-x-4 border-b border-gray-700 overflow-x-auto pb-2 sm:pb-0 sm:border-b-0">
-                    {tabCategories.map(tab => (
-                         <button 
-                            key={tab}
-                            onClick={() => setActiveTab(tab)} 
-                            className={`py-2 px-3 sm:px-4 font-semibold transition-colors duration-200 text-sm whitespace-nowrap ${activeTab === tab ? 'text-kadin-gold border-b-2 border-kadin-gold' : 'text-kadin-slate hover:text-kadin-white'}`}
-                        >
-                            {tab}{tab === 'Saved' && ` (${savedArticleIds.size})`}
-                        </button>
-                    ))}
-                </div>
-                 <div className="mt-4 sm:mt-0">
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as 'Default' | 'Priority')}
-                        className="bg-kadin-navy p-2 rounded-md focus:outline-none focus:ring-1 focus:ring-kadin-gold text-sm text-kadin-light-slate"
-                    >
-                        <option value="Default">Sort by Date</option>
-                        <option value="Priority">Sort by Priority</option>
-                    </select>
-                </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayedArticles.length > 0 ? (
-                    displayedArticles.map(article => (
-                        <ArticleCard key={article.id} article={article} isSaved={savedArticleIds.has(article.id)} />
-                    ))
-                ) : (
-                    <div className="col-span-full text-center py-10 text-kadin-slate">
-                        <p>No articles found matching your criteria.</p>
-                    </div>
-                )}
-            </div>
+          <h2 className="text-3xl font-bold text-kadin-white">
+            Knowledge & Learning
+          </h2>
+          <p className="text-kadin-slate mt-1">
+            Access verified business insights, regulations, and learning
+            materials.
+          </p>
         </div>
-    );
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center justify-center gap-2 bg-kadin-gold text-kadin-navy font-bold px-6 py-3 rounded-xl hover:bg-yellow-400 transition-all shadow-lg shadow-kadin-gold/10"
+        >
+          <PlusIcon className="w-5 h-5" />
+          Share Knowledge
+        </button>
+      </div>
+
+      <div className="bg-kadin-light-navy/50 p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row gap-4 items-end">
+        <div className="flex-1 w-full">
+          <label
+            htmlFor="search-knowledge"
+            className="block text-xs font-bold text-kadin-slate uppercase mb-2 ml-1"
+          >
+            Search Knowledge
+          </label>
+          <input
+            id="search-knowledge"
+            type="text"
+            placeholder="Search by title or content..."
+            className="w-full bg-kadin-navy border border-gray-700 rounded-lg p-3 text-kadin-white focus:border-kadin-gold focus:ring-1 focus:ring-kadin-gold outline-none transition-all text-sm"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="w-full md:w-64">
+          <label
+            htmlFor="category-filter"
+            className="block text-xs font-bold text-kadin-slate uppercase mb-2 ml-1"
+          >
+            Category
+          </label>
+          <select
+            id="category-filter"
+            className="w-full bg-kadin-navy border border-gray-700 rounded-lg p-3 text-kadin-white focus:border-kadin-gold focus:ring-1 focus:ring-kadin-gold outline-none transition-all text-sm"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {filteredEntries.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredEntries.map((entry) => (
+            <KnowledgeCard
+              key={entry.id}
+              entry={entry}
+              onClick={() => setSelectedEntry(entry)}
+            />
+          ))}
+        </div>
+      ) : (
+        !loading && (
+          <div className="text-center py-20 bg-kadin-light-navy/30 rounded-2xl border border-dashed border-gray-700">
+            <p className="text-kadin-slate">
+              No knowledge entries found matching your criteria.
+            </p>
+          </div>
+        )
+      )}
+
+      {/* Detail Modal */}
+      {selectedEntry && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-kadin-light-navy border border-gray-700 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-kadin-navy/50">
+              <div>
+                <h3 className="text-xl font-bold text-kadin-white">
+                  {selectedEntry.title}
+                </h3>
+                <p className="text-xs text-kadin-slate mt-1">
+                  Published on{" "}
+                  {new Date(selectedEntry.created_at).toLocaleDateString()} by{" "}
+                  {selectedEntry.author_name}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedEntry(null)}
+                className="text-kadin-slate hover:text-kadin-white transition-colors p-2 hover:bg-gray-700 rounded-full"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto custom-scrollbar space-y-6">
+              <div className="relative h-64 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
+                <img
+                  src={selectedEntry.image_url}
+                  alt={selectedEntry.title}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute top-4 left-4">
+                  <span className="bg-kadin-navy/80 backdrop-blur-md text-kadin-gold text-xs font-bold px-3 py-1.5 rounded-full border border-kadin-gold/20 uppercase tracking-widest">
+                    {selectedEntry.category}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 py-3 border-b border-gray-700/50">
+                  <img
+                    src={selectedEntry.author_avatar}
+                    alt=""
+                    className="w-10 h-10 rounded-full border border-gray-600"
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-kadin-white">
+                      {selectedEntry.author_name}
+                    </p>
+                    <p className="text-xs text-kadin-slate">Contributor</p>
+                  </div>
+                </div>
+
+                <div className="prose prose-invert max-w-none">
+                  <p className="text-kadin-light-slate leading-relaxed whitespace-pre-wrap text-lg">
+                    {selectedEntry.content}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-700 flex justify-end bg-kadin-navy/50">
+              <button
+                onClick={() => setSelectedEntry(null)}
+                className="px-8 py-2.5 bg-kadin-gold text-kadin-navy rounded-xl font-bold hover:bg-yellow-400 transition-all shadow-lg shadow-kadin-gold/20"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submission Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-kadin-light-navy border border-gray-700 rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="p-6 border-b border-gray-700 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-kadin-white">
+                Share Your Knowledge
+              </h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-kadin-slate hover:text-kadin-white transition-colors"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col flex-1 overflow-hidden"
+            >
+              <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+                <div>
+                  <label
+                    htmlFor="title"
+                    className="block text-sm font-medium text-kadin-slate mb-1.5"
+                  >
+                    Title
+                  </label>
+                  <input
+                    id="title"
+                    type="text"
+                    required
+                    placeholder="Enter a descriptive title"
+                    className="w-full bg-kadin-navy border border-gray-700 rounded-lg p-2.5 text-kadin-white focus:border-kadin-gold focus:ring-1 focus:ring-kadin-gold outline-none transition-all"
+                    value={newEntry.title}
+                    onChange={(e) =>
+                      setNewEntry({ ...newEntry, title: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label
+                      htmlFor="category"
+                      className="block text-sm font-medium text-kadin-slate mb-1.5"
+                    >
+                      Category
+                    </label>
+                    <select
+                      id="category"
+                      className="w-full bg-kadin-navy border border-gray-700 rounded-lg p-2.5 text-kadin-white focus:border-kadin-gold focus:ring-1 focus:ring-kadin-gold outline-none transition-all"
+                      value={newEntry.category}
+                      onChange={(e) =>
+                        setNewEntry({ ...newEntry, category: e.target.value })
+                      }
+                    >
+                      {categories
+                        .filter((c) => c !== "All")
+                        .map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-kadin-slate mb-1.5">
+                      Cover Image
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        disabled={isUploading}
+                        className="hidden"
+                        id="knowledge-image"
+                      />
+                      <label
+                        htmlFor="knowledge-image"
+                        className={`flex items-center justify-center w-full p-2.5 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-kadin-gold/50 hover:bg-kadin-gold/5 transition-all text-sm ${isUploading ? "opacity-50 cursor-not-allowed" : "text-kadin-slate"}`}
+                      >
+                        {isUploading
+                          ? "Uploading..."
+                          : newEntry.image_url
+                            ? "Change Image"
+                            : "Upload Image"}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {newEntry.image_url && (
+                  <div className="relative h-40 rounded-lg overflow-hidden border border-gray-700">
+                    <img
+                      src={newEntry.image_url}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNewEntry({ ...newEntry, image_url: "" })
+                      }
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600 shadow-lg"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+                <div>
+                  <label
+                    htmlFor="content"
+                    className="block text-sm font-medium text-kadin-slate mb-1.5"
+                  >
+                    Content / Summary
+                  </label>
+                  <textarea
+                    id="content"
+                    required
+                    placeholder="Share the key insights or summary of this knowledge..."
+                    className="w-full bg-kadin-navy border border-gray-700 rounded-lg p-2.5 text-kadin-white h-40 focus:border-kadin-gold focus:ring-1 focus:ring-kadin-gold outline-none transition-all resize-none"
+                    value={newEntry.content}
+                    onChange={(e) =>
+                      setNewEntry({ ...newEntry, content: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-700 flex justify-end gap-3 bg-kadin-light-navy">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-6 py-2.5 border border-gray-700 rounded-lg text-kadin-white hover:bg-gray-800 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving || isUploading}
+                  className="px-6 py-2.5 bg-kadin-gold text-kadin-navy rounded-lg font-bold hover:bg-yellow-400 disabled:opacity-50 transition-all shadow-lg shadow-kadin-gold/10"
+                >
+                  {isSaving ? "Submitting..." : "Submit for Review"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default Knowledge;

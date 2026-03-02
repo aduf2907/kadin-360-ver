@@ -33,7 +33,8 @@ export type Page =
   | "Event Details"
   | "Events"
   | "Project Management"
-  | "Partner Management";
+  | "Partner Management"
+  | "Knowledge Management";
 
 export interface NewsArticle {
   id: number;
@@ -62,6 +63,19 @@ export interface Article {
   summary: string;
   imageUrl: string;
   priority?: "High" | "Medium" | "Low";
+}
+
+export interface KnowledgeEntry {
+  id: string;
+  created_at: string;
+  title: string;
+  category: string;
+  content: string;
+  image_url: string;
+  author_id: string;
+  author_name?: string;
+  author_avatar?: string;
+  status: "pending" | "approved" | "rejected";
 }
 
 export interface UserReview {
