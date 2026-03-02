@@ -32,7 +32,8 @@ export type Page =
   | "Activities Management"
   | "Event Details"
   | "Events"
-  | "Project Management";
+  | "Project Management"
+  | "Partner Management";
 
 export interface NewsArticle {
   id: number;

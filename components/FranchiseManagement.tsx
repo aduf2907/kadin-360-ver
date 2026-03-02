@@ -309,7 +309,7 @@ const FranchiseManagement: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm text-kadin-slate mb-1">
-                    Contact Name
+                    Name
                   </label>
                   <input
                     type="text"
@@ -328,7 +328,7 @@ const FranchiseManagement: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm text-kadin-slate mb-1">
-                    Contact Email
+                    Email
                   </label>
                   <input
                     type="email"
@@ -347,7 +347,7 @@ const FranchiseManagement: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm text-kadin-slate mb-1">
-                    Contact Phone
+                    Phone
                   </label>
                   <input
                     type="text"

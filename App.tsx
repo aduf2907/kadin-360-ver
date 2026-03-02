@@ -45,6 +45,7 @@ import Events from "./components/Events";
 import supabase from "./src/supabase-client";
 import ProjectManagement from "./components/ProjectManagement";
 import FranchiseManagement from "./components/FranchiseManagement";
+import PartnerManagement from "./components/PartnerManagement";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
 const LAST_PAGE_KEY = "kadin360-last-visited-page";
@@ -309,6 +310,8 @@ const App: React.FC = () => {
         return <ProjectManagement />;
       case "Franchise Management":
         return <FranchiseManagement />;
+      case "Partner Management":
+        return <PartnerManagement />;
     }
   };
 

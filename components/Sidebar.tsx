@@ -212,6 +212,12 @@ export const navCategories: NavCategory[] = [
         adminOnly: true,
       },
       {
+        page: "Partner Management",
+        icon: <MitraIcon className="h-6 w-6" />,
+        label: "Partner Management",
+        adminOnly: true,
+      },
+      {
         page: "Bonafiditas",
         icon: <BonafiditasIcon className="h-6 w-6" />,
         label: "User Bonafidity",
