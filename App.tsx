@@ -47,6 +47,8 @@ import ProjectManagement from "./components/ProjectManagement";
 import FranchiseManagement from "./components/FranchiseManagement";
 import PartnerManagement from "./components/PartnerManagement";
 import KnowledgeManagement from "./components/KnowledgeManagement";
+import ExperienceManagement from "./components/ExperienceManagement";
+import StoryManagement from "./components/StoryManagement";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
 const LAST_PAGE_KEY = "kadin360-last-visited-page";
@@ -242,11 +244,11 @@ const App: React.FC = () => {
           />
         );
       case "Experience":
-        return <Experience />;
+        return <Experience user={user} />;
       case "Community":
         return <Community />;
       case "My Story":
-        return <MyStory />;
+        return <MyStory user={user} />;
       case "Franchise":
         return <Franchise />;
       case "Secretariat":
@@ -306,6 +308,10 @@ const App: React.FC = () => {
         return <PartnerManagement />;
       case "Knowledge Management":
         return <KnowledgeManagement />;
+      case "Experience Management":
+        return <ExperienceManagement />;
+      case "Story Management":
+        return <StoryManagement />;
     }
   };
 

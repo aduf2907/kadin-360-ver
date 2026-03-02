@@ -34,7 +34,9 @@ export type Page =
   | "Events"
   | "Project Management"
   | "Partner Management"
-  | "Knowledge Management";
+  | "Knowledge Management"
+  | "Experience Management"
+  | "Story Management";
 
 export interface NewsArticle {
   id: number;
@@ -86,6 +88,32 @@ export interface UserReview {
   rating: number; // 1 to 5
   comment: string;
   date: string; // ISO 8601 format
+}
+
+export interface ExperienceEntry {
+  id: string;
+  created_at: string;
+  title: string;
+  category: string;
+  content: string;
+  image_url: string;
+  author_id: string;
+  author_name?: string;
+  author_avatar?: string;
+  status: "pending" | "approved" | "rejected";
+}
+
+export interface StoryEntry {
+  id: string;
+  created_at: string;
+  title: string;
+  category: string;
+  content: string;
+  image_url: string;
+  author_id: string;
+  author_name?: string;
+  author_avatar?: string;
+  status: "pending" | "approved" | "rejected";
 }
 
 export interface UserProfile {
