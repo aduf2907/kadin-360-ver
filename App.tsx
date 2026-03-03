@@ -258,7 +258,7 @@ const App: React.FC = () => {
       case "Business Advisor":
         return <BusinessAdvisor />;
       case "KADINers Rooms":
-        return <KADINersRooms />;
+        return <KADINersRooms user={user} />;
       case "Mitra KADIN":
         return <Mitra />;
       case "Membership Card":

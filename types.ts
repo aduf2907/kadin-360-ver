@@ -315,3 +315,25 @@ export interface KadinActivity {
   priority: "High" | "Medium" | "Low";
   status: "To Do" | "In Progress" | "Completed";
 }
+
+export interface DiscussionEntry {
+  id: string;
+  created_at: string;
+  title: string;
+  category: string;
+  content: string;
+  author_id: string;
+  author_name?: string;
+  author_avatar?: string;
+  replies_count?: number;
+}
+
+export interface ReplyEntry {
+  id: string;
+  created_at: string;
+  discussion_id: string;
+  content: string;
+  author_id: string;
+  author_name?: string;
+  author_avatar?: string;
+}
