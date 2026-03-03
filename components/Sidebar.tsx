@@ -23,8 +23,6 @@ import ProjectOpportunitiesIcon from "./icons/ProjectOpportunitiesIcon";
 import BonafiditasIcon from "./icons/BonafiditasIcon";
 import EventManagementIcon from "./icons/EventManagementIcon";
 import ActivitiesManagementIcon from "./icons/ActivitiesManagementIcon";
-import NewsIcon from "./icons/NewsIcon";
-import { useUserProfile } from "@/src/hooks/useUserProfile";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -45,6 +43,7 @@ export interface NavCategory {
   title: string;
   color: string;
   items: NavItem[];
+  adminOnly?: boolean;
 }
 
 const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -74,7 +73,11 @@ export const navCategories: NavCategory[] = [
         icon: <HomeIcon className="h-6 w-6" />,
         label: "Home",
       },
-      // { page: 'Gabung Sekarang', icon: <UserPlusIcon className="h-6 w-6" />, label: 'Join Now' },
+      {
+        page: "Gabung Sekarang",
+        icon: <UserPlusIcon className="h-6 w-6" />,
+        label: "Join Now",
+      },
       {
         page: "Dashboard",
         icon: <DashboardIcon className="h-6 w-6" />,
@@ -149,11 +152,6 @@ export const navCategories: NavCategory[] = [
     color: "text-yellow-400",
     items: [
       {
-        page: "News",
-        icon: <NewsIcon className="h-6 w-6" />,
-        label: "News & Updates",
-      },
-      {
         page: "Knowledge",
         icon: <KnowledgeIcon className="h-6 w-6" />,
         label: "Knowledge & Learning",
@@ -195,9 +193,27 @@ export const navCategories: NavCategory[] = [
         label: "Business Advisor",
       },
       {
+        page: "Bonafiditas",
+        icon: <BonafiditasIcon className="h-6 w-6" />,
+        label: "User Bonafidity",
+      },
+      {
+        page: "Upgrade",
+        icon: <UpgradeIcon className="h-6 w-6" />,
+        label: "Upgrade to Premium",
+      },
+    ],
+  },
+  {
+    title: "Admin",
+    color: "text-orange-400",
+    adminOnly: true,
+    items: [
+      {
         page: "Activities Management",
         icon: <ActivitiesManagementIcon className="h-6 w-6" />,
         label: "Activities Management",
+        adminOnly: true,
       },
       {
         page: "Project Management",
@@ -235,16 +251,6 @@ export const navCategories: NavCategory[] = [
         label: "Story Management",
         adminOnly: true,
       },
-      {
-        page: "Bonafiditas",
-        icon: <BonafiditasIcon className="h-6 w-6" />,
-        label: "User Bonafidity",
-      },
-      {
-        page: "Upgrade",
-        icon: <UpgradeIcon className="h-6 w-6" />,
-        label: "Upgrade to Premium",
-      },
     ],
   },
 ];
@@ -257,9 +263,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   user,
 }) => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const { profile, setProfile, loading } = useUserProfile();
 
-  // Otomatis buka kategori yang berisi halaman aktif
   useEffect(() => {
     const activeCategory = navCategories.find((cat) =>
       cat.items.some((item) => item.page === currentPage),
@@ -281,24 +285,21 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Overlay for mobile */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden transition-opacity ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={toggleSidebar}
       ></div>
 
       <aside
-        className={`fixed lg:relative flex flex-col bg-kadin-light-navy text-kadin-light-slate h-full z-30 transform transition-all duration-300 ease-in-out group ${isDashboard ? "lg:w-64" : "lg:w-20 lg:hover:w-64"} ${isOpen ? "translate-x-0 w-64" : "-translate-x-full"} lg:translate-x-0`}
+        className={`fixed lg:sticky lg:top-0 h-screen lg:h-[calc(100vh-footerHeight)] flex flex-col bg-kadin-light-navy text-kadin-light-slate z-30 transform transition-all duration-300 ease-in-out group ${isDashboard ? "lg:w-64" : "lg:w-20 lg:hover:w-64"} ${isOpen ? "translate-x-0 w-64" : "-translate-x-full"} lg:translate-x-0 border-r border-gray-700`}
       >
         <div className="flex items-center justify-center h-20 border-b border-gray-700 flex-shrink-0 px-4">
           <div className="w-full">
-            {/* Collapsed Logo */}
             <div
               className={`text-center ${isDashboard ? "lg:hidden" : "lg:group-hover:hidden"}`}
             >
               <span className="font-bold text-3xl text-kadin-gold">K</span>
             </div>
-            {/* Expanded Logo */}
             <h1
               className={`text-xl font-semibold text-kadin-white hidden items-center justify-between ${isDashboard ? "lg:flex" : "lg:group-hover:flex"}`}
             >
@@ -335,18 +336,18 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => setCurrentPage("Profile")}
             >
               <img
-                src={profile?.avatar_url}
-                alt={profile?.name}
+                src={user.avatar_url}
+                alt={user.name}
                 className="h-12 w-12 rounded-full border-2 border-kadin-gold/50 flex-shrink-0"
               />
               <div
                 className={`min-w-0 hidden ${isDashboard ? "lg:block" : "lg:group-hover:block"}`}
               >
                 <h4 className="font-bold text-kadin-white group-hover/profile:text-kadin-gold transition-colors truncate">
-                  {profile?.name}
+                  {user.name}
                 </h4>
                 <p className="text-xs text-kadin-slate truncate">
-                  {profile?.company}
+                  {user.company}
                 </p>
               </div>
             </div>
@@ -356,16 +357,22 @@ const Sidebar: React.FC<SidebarProps> = ({
         <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
           <ul>
             {navCategories.map((category, index) => {
+              if (category.adminOnly && (!user || user.is_admin !== true))
+                return null;
+
+              // Pengecekan ketat: Hanya tampilkan jika item tidak khusus admin,
+              // atau jika user secara eksplisit memiliki is_admin === true
               const filteredItems = category.items.filter((item) => {
                 if (item.adminOnly) {
-                  return profile && profile.is_admin === true;
+                  return user && user.is_admin === true;
                 }
                 return true;
               });
+
               if (filteredItems.length === 0) return null;
 
               const isExpanded = expandedCategory === category.title;
-              const hasActiveItem = category.items.some(
+              const hasActiveItem = filteredItems.some(
                 (i) => i.page === currentPage,
               );
 
@@ -378,15 +385,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             justify-between group/cat`}
                   >
                     <div className="flex items-center">
-                      {/* Icon Placeholder for Collapsed State */}
                       <div
                         className={`flex items-center justify-center ${isDashboard ? "lg:hidden" : "lg:group-hover:hidden"}`}
                       >
-                        {React.cloneElement(category.items[0].icon, {
+                        {React.cloneElement(filteredItems[0].icon, {
                           className: `h-5 w-5 ${category.color}`,
                         })}
                       </div>
-                      {/* Text for Expanded State */}
                       <span
                         className={`ml-0 hidden ${isDashboard ? "lg:inline" : "lg:group-hover:inline"}`}
                       >
@@ -400,12 +405,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                     />
                   </button>
 
-                  {/* Dropdown Items */}
                   <ul
                     className={`overflow-hidden transition-all duration-300 ease-in-out bg-kadin-navy/10 
                                         ${isExpanded ? "max-h-[500px] opacity-100 py-2" : "max-h-0 opacity-0"}`}
                   >
-                    {category.items.map((item) => {
+                    {filteredItems.map((item) => {
                       const isActive = currentPage === item.page;
                       return (
                         <li
@@ -445,7 +449,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </ul>
         </nav>
 
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-gray-700 mt-auto">
           <div className="bg-kadin-navy p-4 rounded-lg text-center">
             <div
               className={`hidden ${isDashboard ? "lg:block" : "lg:group-hover:block"}`}
