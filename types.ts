@@ -123,6 +123,7 @@ export interface UserProfile {
   role: string;
   is_admin?: boolean;
   avatar_url?: string;
+  avatar?: string;
   industry: string;
   region: string;
   interests: string[];

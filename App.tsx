@@ -216,7 +216,7 @@ const App: React.FC = () => {
       case "Dashboard":
         return <Dashboard setCurrentPage={setCurrentPage} user={user} />;
       case "Communication":
-        return <Communication />;
+        return <Communication user={user} />;
       case "Knowledge":
         return <Knowledge user={user} />;
       case "News":
@@ -264,7 +264,7 @@ const App: React.FC = () => {
       case "Membership Card":
         return <MembershipCard user={user} />;
       case "Member Directory":
-        return <MemberDirectory setCurrentPage={setCurrentPage} />;
+        return <MemberDirectory setCurrentPage={setCurrentPage} user={user} />;
       case "Gabung Sekarang":
         return <GabungSekarangPage setCurrentPage={setCurrentPage} />;
       case "Upgrade":

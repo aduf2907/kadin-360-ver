@@ -201,14 +201,14 @@ const Profile: React.FC<ProfileProps> = ({
 
             <div
               onClick={() => setCurrentPage("Bonafiditas")}
-              className={`mt-4 p-2 rounded-lg border ${userStatus.borderColor} ${userStatus.bgColor} cursor-pointer hover:bg-opacity-20 transition-all text-left flex items-center gap-3`}
+              className={`mt-4 p-2 rounded-lg border cursor-pointer hover:bg-opacity-20 transition-all text-left flex items-center gap-3`}
               title="Click to see Bonafidity details"
             >
-              <span className="text-2xl">{userStatus.emoji}</span>
+              {/* <span className="text-2xl">{userStatus.emoji}</span> */}
               <div className="flex-1">
-                <p className={`font-bold text-sm ${userStatus.color}`}>
-                  {userStatus.title}
-                </p>
+                {/* <p className={`font-bold text-sm ${userStatus.color}`}> */}
+                {/* {userStatus.title}
+                </p> */}
                 <p className="text-xs text-kadin-slate">
                   Score: <span className="font-bold">{user.rating}</span>/100
                 </p>
