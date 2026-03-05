@@ -174,6 +174,7 @@ export interface CommunityGroup {
   members: number;
   imageUrl: string;
   category: string;
+  member_count?: number;
 }
 
 export interface CommunityEvent {
@@ -337,4 +338,11 @@ export interface ReplyEntry {
   author_id: string;
   author_name?: string;
   author_avatar?: string;
+}
+
+export interface AddGroupInput {
+  name: string;
+  description: string;
+  category: string;
+  created_by: string;
 }

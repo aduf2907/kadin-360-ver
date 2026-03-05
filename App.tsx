@@ -246,7 +246,7 @@ const App: React.FC = () => {
       case "Experience":
         return <Experience user={user} />;
       case "Community":
-        return <Community />;
+        return <Community user={user} />;
       case "My Story":
         return <MyStory user={user} />;
       case "Franchise":
@@ -285,10 +285,10 @@ const App: React.FC = () => {
         return <Events setCurrentPage={setCurrentPage} />;
       case "Activities Management":
         return <ActivitiesManagement />;
-      case "Event Details":
-        return (
-          <EventDetails event={selectedEvent} setCurrentPage={setCurrentPage} />
-        );
+      // case "Event Details":
+      //   return (
+      //     <EventDetails event={selectedEvent} setCurrentPage={setCurrentPage} />
+      //   );
       case "Project Details":
         return selectedProject ? (
           <ProjectDetail
