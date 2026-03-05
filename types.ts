@@ -36,7 +36,8 @@ export type Page =
   | "Partner Management"
   | "Knowledge Management"
   | "Experience Management"
-  | "Story Management";
+  | "Story Management"
+  | "Community Management";
 
 export interface NewsArticle {
   id: number;
@@ -168,13 +169,15 @@ export interface ExperiencePost {
 }
 
 export interface CommunityGroup {
-  id: number;
+  id: string;
+  created_at: string;
   name: string;
   description: string;
-  members: number;
-  imageUrl: string;
   category: string;
-  member_count?: number;
+  image_url: string;
+  member_count: number;
+  is_approved: boolean;
+  created_by: string;
 }
 
 export interface CommunityEvent {

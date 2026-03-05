@@ -49,6 +49,7 @@ import PartnerManagement from "./components/PartnerManagement";
 import KnowledgeManagement from "./components/KnowledgeManagement";
 import ExperienceManagement from "./components/ExperienceManagement";
 import StoryManagement from "./components/StoryManagement";
+import CommunityManagement from "./components/CommunityManagement";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
 const LAST_PAGE_KEY = "kadin360-last-visited-page";
@@ -312,6 +313,8 @@ const App: React.FC = () => {
         return <ExperienceManagement />;
       case "Story Management":
         return <StoryManagement />;
+      case "Community Management":
+        return <CommunityManagement user={user} />;
     }
   };
 

@@ -12,7 +12,7 @@ const GroupCard: React.FC<{ group: CommunityGroup }> = ({ group }) => (
     onClick={() => alert(`Navigating to group: ${group.name}`)}
   >
     <img
-      src={group.imageUrl || "https://picsum.photos/seed/group/400/200"}
+      src={group.image_url || "https://picsum.photos/seed/group/400/200"}
       alt={group.name}
       className="w-full h-40 object-cover"
     />

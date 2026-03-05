@@ -216,6 +216,12 @@ export const navCategories: NavCategory[] = [
         adminOnly: true,
       },
       {
+        page: "Community Management",
+        icon: <CommunityIcon className="h-6 w-6" />,
+        label: "Community Management",
+        adminOnly: true,
+      },
+      {
         page: "Project Management",
         icon: <ProjectOpportunitiesIcon className="h-6 w-6" />,
         label: "Project Management",
