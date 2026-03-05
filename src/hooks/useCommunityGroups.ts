@@ -36,14 +36,14 @@ export const useCommunityGroups = () => {
         const filePath = `group-images/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("community-groups")
+          .from("community_groups")
           .upload(filePath, imageFile);
 
         if (uploadError) throw uploadError;
 
         const {
           data: { publicUrl },
-        } = supabase.storage.from("community-groups").getPublicUrl(filePath);
+        } = supabase.storage.from("community_groups").getPublicUrl(filePath);
 
         imageUrl = publicUrl;
       }
