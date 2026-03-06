@@ -39,7 +39,8 @@ export type Page =
   | "Story Management"
   | "Community Management"
   | "Legal Management"
-  | "Business Management";
+  | "Business Management"
+  | "Bonafidity Management";
 
 export interface NewsArticle {
   id: number;
@@ -395,5 +396,17 @@ export interface BusinessAdvisor {
   specialization: string;
   avatar_url: string;
   bio: string;
+  created_at: string;
+}
+
+export interface BonafidityLog {
+  id: string;
+  user_id: string;
+  old_status: string;
+  new_status: string;
+  old_score: number;
+  new_score: number;
+  reason: string;
+  admin_id?: string;
   created_at: string;
 }

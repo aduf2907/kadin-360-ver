@@ -52,6 +52,7 @@ import StoryManagement from "./components/StoryManagement";
 import CommunityManagement from "./components/CommunityManagement";
 import LegalManagement from "./components/LegalManagement";
 import BusinessManagement from "./components/BusinessManagement";
+import BonafidityManagement from "./components/BonafidityManagement";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
 const LAST_PAGE_KEY = "kadin360-last-visited-page";
@@ -321,6 +322,8 @@ const App: React.FC = () => {
         return <LegalManagement user={user} />;
       case "Business Management":
         return <BusinessManagement user={user} />;
+      case "Bonafidity Management":
+        return <BonafidityManagement user={user} />;
     }
   };
 

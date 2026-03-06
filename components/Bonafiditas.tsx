@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UserProfile } from "../types";
+import { useBonafidity } from "@/src/hooks/useBonafidity";
 
 interface BonafiditasProps {
   user: UserProfile;
@@ -141,10 +142,17 @@ const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 const Bonafiditas: React.FC<BonafiditasProps> = ({ user }) => {
+  const { logs, loading, fetchUserLogs } = useBonafidity();
   const [openLevel, setOpenLevel] = useState<number | null>(0); // Default to showing Green
   const status =
     statusConfig[user.bonafidityStatus as keyof typeof statusConfig] ||
     statusConfig.Yellow;
+
+  useEffect(() => {
+    if (user.id) {
+      fetchUserLogs(user.id.toString());
+    }
+  }, [user.id]);
 
   const toggleLevel = (index: number) => {
     setOpenLevel(openLevel === index ? null : index);
@@ -296,6 +304,94 @@ const Bonafiditas: React.FC<BonafiditasProps> = ({ user }) => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+      {/* Bonafidity History */}
+      <div className="mt-12">
+        <h3 className="text-2xl font-bold text-kadin-white mb-6">
+          Status History
+        </h3>
+        <div className="bg-kadin-light-navy rounded-lg border border-gray-700 overflow-hidden">
+          {loading ? (
+            <div className="p-8 text-center text-kadin-slate italic">
+              Loading history...
+            </div>
+          ) : logs.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-kadin-navy/50 text-kadin-slate text-xs uppercase tracking-wider">
+                    <th className="px-6 py-3 font-bold">Date</th>
+                    <th className="px-6 py-3 font-bold">Change</th>
+                    <th className="px-6 py-3 font-bold">Score</th>
+                    <th className="px-6 py-3 font-bold">Reason</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {logs.map((log) => (
+                    <tr key={log.id} className="text-sm">
+                      <td className="px-6 py-4 text-kadin-slate">
+                        {new Date(log.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-kadin-slate">
+                            {log.old_status}
+                          </span>
+                          <svg
+                            className="w-3 h-3 text-kadin-gold"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M14 5l7 7m0 0l-7 7m7-7H3"
+                            />
+                          </svg>
+                          <span className="text-kadin-white font-bold">
+                            {log.new_status}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-kadin-slate">
+                            {log.old_score}
+                          </span>
+                          <svg
+                            className="w-3 h-3 text-kadin-gold"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M14 5l7 7m0 0l-7 7m7-7H3"
+                            />
+                          </svg>
+                          <span className="text-kadin-white font-bold">
+                            {log.new_score}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-kadin-slate italic">
+                        {log.reason}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-8 text-center text-kadin-slate italic">
+              No status changes recorded yet.
+            </div>
+          )}
         </div>
       </div>
     </div>
