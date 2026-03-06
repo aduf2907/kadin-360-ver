@@ -51,6 +51,7 @@ import ExperienceManagement from "./components/ExperienceManagement";
 import StoryManagement from "./components/StoryManagement";
 import CommunityManagement from "./components/CommunityManagement";
 import LegalManagement from "./components/LegalManagement";
+import BusinessManagement from "./components/BusinessManagement";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
 const LAST_PAGE_KEY = "kadin360-last-visited-page";
@@ -258,7 +259,7 @@ const App: React.FC = () => {
       case "HalloHukum":
         return <HalloHukum user={user} />;
       case "Business Advisor":
-        return <BusinessAdvisor />;
+        return <BusinessAdvisor user={user} />;
       case "KADINers Rooms":
         return <KADINersRooms user={user} />;
       case "Mitra KADIN":
@@ -318,6 +319,8 @@ const App: React.FC = () => {
         return <CommunityManagement user={user} />;
       case "Legal Management":
         return <LegalManagement user={user} />;
+      case "Business Management":
+        return <BusinessManagement user={user} />;
     }
   };
 

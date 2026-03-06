@@ -263,6 +263,12 @@ export const navCategories: NavCategory[] = [
         label: "Legal Management",
         adminOnly: true,
       },
+      {
+        page: "Business Management",
+        icon: <BusinessAdvisorIcon className="h-6 w-6" />,
+        label: "Business Management",
+        adminOnly: true,
+      },
     ],
   },
 ];

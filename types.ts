@@ -38,7 +38,8 @@ export type Page =
   | "Experience Management"
   | "Story Management"
   | "Community Management"
-  | "Legal Management";
+  | "Legal Management"
+  | "Business Management";
 
 export interface NewsArticle {
   id: number;
@@ -366,6 +367,29 @@ export interface LegalConsultation {
 }
 
 export interface LegalAdvisor {
+  id: string;
+  name: string;
+  specialization: string;
+  avatar_url: string;
+  bio: string;
+  created_at: string;
+}
+
+export interface BusinessConsultation {
+  id: string;
+  user_id: string;
+  subject: string;
+  category: string;
+  description: string;
+  attachment_url?: string;
+  status: "pending" | "in_progress" | "resolved" | "rejected";
+  admin_response?: string;
+  created_at: string;
+  updated_at: string;
+  user_name?: string;
+}
+
+export interface BusinessAdvisor {
   id: string;
   name: string;
   specialization: string;
