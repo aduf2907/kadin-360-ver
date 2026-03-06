@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useBonafidity } from "@/src/hooks/useBonafidity";
-import { UserProfile } from "../types";
+import { UserProfile } from "@/types";
 import Card from "./Card";
 
 interface BonafidityManagementProps {
@@ -52,8 +52,23 @@ const BonafidityManagement: React.FC<BonafidityManagementProps> = ({
 
     if (res.success) {
       alert("Bonafidity updated successfully!");
+
+      // Update local state immediately for better UX
+      setUsers((prevUsers) =>
+        prevUsers.map((u) =>
+          u.id === selectedUser.id
+            ? {
+                ...u,
+                bonafidity_status: newStatus.toLowerCase(),
+                rating: newScore,
+              }
+            : u,
+        ),
+      );
+
       setSelectedUser(null);
       setReason("");
+      // Still reload to ensure sync with any server-side changes
       loadUsers();
     } else {
       alert("Error: " + res.error);
@@ -141,11 +156,12 @@ const BonafidityManagement: React.FC<BonafidityManagementProps> = ({
                           <button
                             onClick={() => {
                               setSelectedUser(u);
+                              const status = u.bonafidity_status || "yellow";
                               setNewStatus(
-                                u.bonafidity_status.charAt(0).toUpperCase() +
-                                  u.bonafidity_status.slice(1),
+                                status.charAt(0).toUpperCase() +
+                                  status.slice(1),
                               );
-                              setNewScore(u.rating);
+                              setNewScore(u.rating || 50);
                             }}
                             className="text-xs text-kadin-gold hover:text-yellow-400 font-bold uppercase tracking-wider"
                           >
