@@ -34,7 +34,9 @@ export const useLegal = () => {
         .select(
           `
                     *,
-                    users:user_id (name)
+                    users!user_id (
+                        name
+                    )
                 `,
         )
         .order("created_at", { ascending: false });
@@ -50,7 +52,11 @@ export const useLegal = () => {
       const mappedData =
         data?.map((item) => ({
           ...item,
-          user_name: item.users?.name,
+          user_name: item.users
+            ? Array.isArray(item.users)
+              ? item.users[0]?.name
+              : item.users.name
+            : "Unknown",
         })) || [];
 
       setConsultations(mappedData);
