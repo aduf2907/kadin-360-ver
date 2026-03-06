@@ -257,6 +257,12 @@ export const navCategories: NavCategory[] = [
         label: "Story Management",
         adminOnly: true,
       },
+      {
+        page: "Legal Management",
+        icon: <HalloHukumIcon className="h-6 w-6" />,
+        label: "Legal Management",
+        adminOnly: true,
+      },
     ],
   },
 ];
