@@ -40,7 +40,8 @@ export type Page =
   | "Community Management"
   | "Legal Management"
   | "Business Management"
-  | "Bonafidity Management";
+  | "Bonafidity Management"
+  | "Insight Management";
 
 export interface NewsArticle {
   id: number;
@@ -408,5 +409,17 @@ export interface BonafidityLog {
   new_score: number;
   reason: string;
   admin_id?: string;
+  created_at: string;
+}
+
+export interface MarketInsight {
+  id: string;
+  title: string;
+  summary: string;
+  content?: string;
+  category: string;
+  industry?: string;
+  image_url?: string;
+  is_premium: boolean;
   created_at: string;
 }

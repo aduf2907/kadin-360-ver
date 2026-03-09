@@ -53,6 +53,7 @@ import CommunityManagement from "./components/CommunityManagement";
 import LegalManagement from "./components/LegalManagement";
 import BusinessManagement from "./components/BusinessManagement";
 import BonafidityManagement from "./components/BonafidityManagement";
+import InsightManagement from "./components/InsightManagement";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
 const LAST_PAGE_KEY = "kadin360-last-visited-page";
@@ -228,7 +229,7 @@ const App: React.FC = () => {
       case "Matching":
         return <Matching />;
       case "Insight":
-        return <Insight />;
+        return <Insight user={user} />;
       case "Profile":
         return (
           <Profile
@@ -324,6 +325,8 @@ const App: React.FC = () => {
         return <BusinessManagement user={user} />;
       case "Bonafidity Management":
         return <BonafidityManagement user={user} />;
+      case "Insight Management":
+        return <InsightManagement user={user} />;
     }
   };
 

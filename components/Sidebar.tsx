@@ -73,11 +73,11 @@ export const navCategories: NavCategory[] = [
         icon: <HomeIcon className="h-6 w-6" />,
         label: "Home",
       },
-      {
-        page: "Gabung Sekarang",
-        icon: <UserPlusIcon className="h-6 w-6" />,
-        label: "Join Now",
-      },
+      // {
+      //   page: "Gabung Sekarang",
+      //   icon: <UserPlusIcon className="h-6 w-6" />,
+      //   label: "Join Now",
+      // },
       {
         page: "Dashboard",
         icon: <DashboardIcon className="h-6 w-6" />,
@@ -237,6 +237,12 @@ export const navCategories: NavCategory[] = [
         page: "Story Management",
         icon: <MyStoryIcon className="h-6 w-6" />,
         label: "Stories",
+        adminOnly: true,
+      },
+      {
+        page: "Insight Management",
+        icon: <InsightIcon className="h-6 w-6" />,
+        label: "Insight Management",
         adminOnly: true,
       },
     ],
