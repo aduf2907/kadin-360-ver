@@ -273,7 +273,13 @@ const App: React.FC = () => {
       case "Gabung Sekarang":
         return <GabungSekarangPage setCurrentPage={setCurrentPage} />;
       case "Upgrade":
-        return <UpgradePage setCurrentPage={setCurrentPage} />;
+        return (
+          <UpgradePage
+            setCurrentPage={setCurrentPage}
+            user={user}
+            setUser={setUser}
+          />
+        );
       case "Project Opportunities":
         return <ProjectOpportunities setCurrentPage={setCurrentPage} />;
       case "Document Hub":
@@ -330,11 +336,27 @@ const App: React.FC = () => {
     }
   };
 
+  // if (isAuthChecking) {
+  //   return (
+  //     <div className="bg-kadin-navy min-h-screen flex items-center justify-center">
+  //       <div className="flex flex-col items-center">
+  //         <div className="w-16 h-16 border-4 border-kadin-gold border-t-transparent rounded-full animate-spin mb-4"></div>
+  //         <p className="text-kadin-gold font-bold">Memuat Profil...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
   // Pages that are displayed without the sidebar layout (Public/Landing Pages)
   const isPublicPage =
     currentPage === "Beranda" ||
     currentPage === "Gabung Sekarang" ||
     currentPage === "Login";
+
+  if (!isPublicPage && !user) {
+    setCurrentPage("Login");
+    return null;
+  }
 
   if (isPublicPage) {
     return (
@@ -392,7 +414,10 @@ const App: React.FC = () => {
         <Footer currentPage={currentPage} setCurrentPage={setCurrentPage} />
       </div>
 
-      <AIChatbot userProfile={user} logUserActivity={logUserActivity} />
+      {/* <AIChatbot userProfile={user} logUserActivity={logUserActivity} /> */}
+      {user && (
+        <AIChatbot userProfile={user} logUserActivity={logUserActivity} />
+      )}
     </div>
   );
 };
