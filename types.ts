@@ -416,6 +416,7 @@ export interface MarketInsight {
   id: string;
   title: string;
   summary: string;
+  description?: string;
   content?: string;
   category: string;
   industry?: string;

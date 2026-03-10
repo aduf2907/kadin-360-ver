@@ -5,6 +5,8 @@ import { Transaction, MarketInsight } from "@/types";
 export const useInsights = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [marketInsights, setMarketInsights] = useState<MarketInsight[]>([]);
+  const [engagementStats, setEngagementStats] = useState<any[]>([]);
+  const [industryTrends, setIndustryTrends] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +54,30 @@ export const useInsights = () => {
     }
   };
 
+  const fetchEngagementStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("automated_engagement_stats")
+        .select("*");
+      if (error) throw error;
+      setEngagementStats(data || []);
+    } catch (err) {
+      console.error("Error fetching engagement stats:", err);
+    }
+  };
+
+  const fetchIndustryTrends = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("automated_industry_trends")
+        .select("*");
+      if (error) throw error;
+      setIndustryTrends(data || []);
+    } catch (err) {
+      console.error("Error fetching industry trends:", err);
+    }
+  };
+
   const logAnalyticsEvent = async (
     userId: string | number,
     eventType: string,
@@ -73,10 +99,14 @@ export const useInsights = () => {
   return {
     transactions,
     marketInsights,
+    engagementStats,
+    industryTrends,
     loading,
     error,
     fetchTransactions,
     fetchMarketInsights,
+    fetchEngagementStats,
+    fetchIndustryTrends,
     logAnalyticsEvent,
   };
 };

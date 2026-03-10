@@ -57,8 +57,12 @@ const Insight: React.FC<InsightProps> = ({ user }) => {
   const {
     fetchTransactions,
     fetchMarketInsights,
+    fetchEngagementStats,
+    fetchIndustryTrends,
     transactions,
     marketInsights,
+    engagementStats,
+    industryTrends,
     loading,
   } = useInsights();
 
@@ -66,6 +70,8 @@ const Insight: React.FC<InsightProps> = ({ user }) => {
     if (user?.id) {
       fetchTransactions(user.id);
       fetchMarketInsights();
+      fetchEngagementStats();
+      fetchIndustryTrends();
     }
   }, [user?.id]);
 
@@ -78,9 +84,16 @@ const Insight: React.FC<InsightProps> = ({ user }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard title="Member Engagement">
           <ResponsiveContainer>
-            <BarChart data={engagementData}>
+            <BarChart
+              data={
+                engagementStats.length > 0 ? engagementStats : engagementData
+              }
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
-              <XAxis dataKey="name" stroke="#a8b2d1" />
+              <XAxis
+                dataKey={engagementStats.length > 0 ? "month" : "name"}
+                stroke="#a8b2d1"
+              />
               <YAxis stroke="#a8b2d1" />
               <Tooltip
                 contentStyle={{
@@ -90,20 +103,35 @@ const Insight: React.FC<InsightProps> = ({ user }) => {
               />
               <Legend />
               <Bar
-                dataKey="activeMembers"
+                dataKey={
+                  engagementStats.length > 0
+                    ? "active_members"
+                    : "activeMembers"
+                }
                 fill="#D4AF37"
                 name="Active Members"
               />
-              <Bar dataKey="messages" fill="#4299E1" name="Messages Sent" />
+              <Bar
+                dataKey={
+                  engagementStats.length > 0 ? "messages_sent" : "messages"
+                }
+                fill="#4299E1"
+                name="Messages Sent"
+              />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
 
         <ChartCard title="Business Matching Trends by Industry">
           <ResponsiveContainer>
-            <LineChart data={trendData}>
+            <LineChart
+              data={industryTrends.length > 0 ? industryTrends : trendData}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
-              <XAxis dataKey="name" stroke="#a8b2d1" />
+              <XAxis
+                dataKey={industryTrends.length > 0 ? "period" : "name"}
+                stroke="#a8b2d1"
+              />
               <YAxis stroke="#a8b2d1" />
               <Tooltip
                 contentStyle={{
@@ -112,9 +140,30 @@ const Insight: React.FC<InsightProps> = ({ user }) => {
                 }}
               />
               <Legend />
-              <Line type="monotone" dataKey="Technology" stroke="#D4AF37" />
-              <Line type="monotone" dataKey="Agriculture" stroke="#38B2AC" />
-              <Line type="monotone" dataKey="Manufacturing" stroke="#9F7AEA" />
+              <Line
+                type="monotone"
+                dataKey={
+                  industryTrends.length > 0 ? "technology" : "Technology"
+                }
+                stroke="#D4AF37"
+                name="Technology"
+              />
+              <Line
+                type="monotone"
+                dataKey={
+                  industryTrends.length > 0 ? "agriculture" : "Agriculture"
+                }
+                stroke="#38B2AC"
+                name="Agriculture"
+              />
+              <Line
+                type="monotone"
+                dataKey={
+                  industryTrends.length > 0 ? "manufacturing" : "Manufacturing"
+                }
+                stroke="#9F7AEA"
+                name="Manufacturing"
+              />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -145,7 +194,7 @@ const Insight: React.FC<InsightProps> = ({ user }) => {
                       {insight.title}
                     </h4>
                     <p className="text-kadin-slate text-xs line-clamp-3">
-                      {insight.summary}
+                      {insight.description || insight.summary}
                     </p>
                     <div className="mt-4 text-[10px] text-kadin-light-slate">
                       {new Date(insight.created_at).toLocaleDateString("id-ID")}

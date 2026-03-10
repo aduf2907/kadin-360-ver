@@ -336,17 +336,6 @@ const App: React.FC = () => {
     }
   };
 
-  // if (isAuthChecking) {
-  //   return (
-  //     <div className="bg-kadin-navy min-h-screen flex items-center justify-center">
-  //       <div className="flex flex-col items-center">
-  //         <div className="w-16 h-16 border-4 border-kadin-gold border-t-transparent rounded-full animate-spin mb-4"></div>
-  //         <p className="text-kadin-gold font-bold">Memuat Profil...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   // Pages that are displayed without the sidebar layout (Public/Landing Pages)
   const isPublicPage =
     currentPage === "Beranda" ||

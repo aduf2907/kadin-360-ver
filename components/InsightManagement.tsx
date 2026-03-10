@@ -15,11 +15,21 @@ const InsightManagement: React.FC<InsightManagementProps> = ({ user }) => {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   // Form States
   const [marketInsights, setMarketInsights] = useState<any[]>([]);
   const [engagementStats, setEngagementStats] = useState<any[]>([]);
   const [industryTrends, setIndustryTrends] = useState<any[]>([]);
+
+  // New Insight Form State
+  const [newInsight, setNewInsight] = useState({
+    title: "",
+    category: "Technology",
+    description: "",
+    is_premium: false,
+    image_url: "https://picsum.photos/seed/insight/800/400",
+  });
 
   useEffect(() => {
     fetchData();
@@ -33,14 +43,8 @@ const InsightManagement: React.FC<InsightManagementProps> = ({ user }) => {
           .from("market_insights")
           .select("*")
           .order("created_at", { ascending: false }),
-        supabase
-          .from("engagement_stats")
-          .select("*")
-          .order("id", { ascending: true }),
-        supabase
-          .from("industry_trends")
-          .select("*")
-          .order("id", { ascending: true }),
+        supabase.from("automated_engagement_stats").select("*"),
+        supabase.from("automated_industry_trends").select("*"),
       ]);
 
       if (marketRes.data) setMarketInsights(marketRes.data);
@@ -81,6 +85,50 @@ const InsightManagement: React.FC<InsightManagementProps> = ({ user }) => {
 
       if (error) throw error;
       setMessage({ type: "success", text: "Industry trends updated!" });
+      fetchData();
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message });
+    }
+  };
+
+  const handleAddInsight = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("market_insights")
+        .insert([newInsight]);
+
+      if (error) throw error;
+
+      setMessage({ type: "success", text: "New insight added successfully!" });
+      setShowAddForm(false);
+      setNewInsight({
+        title: "",
+        category: "Technology",
+        description: "",
+        is_premium: false,
+        image_url: "https://picsum.photos/seed/insight/800/400",
+      });
+      fetchData();
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteInsight = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this insight?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("market_insights")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      setMessage({ type: "success", text: "Insight deleted!" });
       fetchData();
     } catch (error: any) {
       setMessage({ type: "error", text: error.message });
@@ -164,8 +212,11 @@ const InsightManagement: React.FC<InsightManagementProps> = ({ user }) => {
                         {insight.is_premium ? "Yes" : "No"}
                       </td>
                       <td className="px-4 py-3">
-                        <button className="text-kadin-gold hover:underline">
-                          Edit
+                        <button
+                          onClick={() => handleDeleteInsight(insight.id)}
+                          className="text-red-500 hover:underline"
+                        >
+                          Delete
                         </button>
                       </td>
                     </tr>
@@ -173,60 +224,155 @@ const InsightManagement: React.FC<InsightManagementProps> = ({ user }) => {
                 </tbody>
               </table>
             </div>
-            <button className="mt-4 bg-kadin-gold text-kadin-navy px-4 py-2 rounded font-bold hover:bg-yellow-400 transition-colors">
-              Add New Insight
-            </button>
+            {showAddForm ? (
+              <div className="mt-6 bg-kadin-navy p-6 rounded-lg border border-kadin-gold/30">
+                <h4 className="text-lg font-bold text-kadin-white mb-4">
+                  Add New Market Insight
+                </h4>
+                <form onSubmit={handleAddInsight} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-kadin-light-slate mb-1">
+                        Title
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={newInsight.title}
+                        onChange={(e) =>
+                          setNewInsight({
+                            ...newInsight,
+                            title: e.target.value,
+                          })
+                        }
+                        className="w-full bg-kadin-light-navy border border-gray-600 rounded px-3 py-2 text-sm text-kadin-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-kadin-light-slate mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={newInsight.category}
+                        onChange={(e) =>
+                          setNewInsight({
+                            ...newInsight,
+                            category: e.target.value,
+                          })
+                        }
+                        className="w-full bg-kadin-light-navy border border-gray-600 rounded px-3 py-2 text-sm text-kadin-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                      >
+                        <option>Technology</option>
+                        <option>Agriculture</option>
+                        <option>Manufacturing</option>
+                        <option>F&B</option>
+                        <option>Finance</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-kadin-light-slate mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      required
+                      value={newInsight.description}
+                      onChange={(e) =>
+                        setNewInsight({
+                          ...newInsight,
+                          description: e.target.value,
+                        })
+                      }
+                      rows={3}
+                      className="w-full bg-kadin-light-navy border border-gray-600 rounded px-3 py-2 text-sm text-kadin-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newInsight.is_premium}
+                        onChange={(e) =>
+                          setNewInsight({
+                            ...newInsight,
+                            is_premium: e.target.checked,
+                          })
+                        }
+                        className="form-checkbox h-4 w-4 text-kadin-gold rounded bg-kadin-light-navy border-gray-600"
+                      />
+                      <span className="text-sm text-kadin-light-slate">
+                        Premium Content
+                      </span>
+                    </label>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="bg-kadin-gold text-kadin-navy px-6 py-2 rounded font-bold hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                    >
+                      {loading ? "Saving..." : "Save Insight"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddForm(false)}
+                      className="bg-gray-600 text-kadin-white px-6 py-2 rounded font-bold hover:bg-gray-500 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="mt-4 bg-kadin-gold text-kadin-navy px-4 py-2 rounded font-bold hover:bg-yellow-400 transition-colors"
+              >
+                Add New Insight
+              </button>
+            )}
           </div>
         )}
 
         {activeTab === "engagement" && (
           <div className="space-y-4">
-            <h3 className="text-xl font-bold text-kadin-white">
-              Manage Engagement Data
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-bold text-kadin-white">
+                Platform Engagement
+              </h3>
+              <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">
+                Automated Sync
+              </span>
+            </div>
+            <p className="text-sm text-kadin-slate">
+              Data is automatically aggregated from user activity and messaging
+              tables.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {engagementStats.map((stat) => (
+              {engagementStats.map((stat, idx) => (
                 <div
-                  key={stat.id}
+                  key={idx}
                   className="bg-kadin-navy p-4 rounded-lg border border-gray-700"
                 >
                   <h4 className="font-bold text-kadin-gold mb-3">
-                    {stat.month}
+                    {stat.month} (Real-time)
                   </h4>
                   <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs text-kadin-slate mb-1">
-                        Active Members
-                      </label>
-                      <input
-                        type="number"
-                        value={stat.active_members}
-                        onChange={(e) =>
-                          handleUpdateEngagement(
-                            stat.id,
-                            "active_members",
-                            parseInt(e.target.value),
-                          )
-                        }
-                        className="w-full bg-kadin-light-navy border border-gray-600 rounded px-2 py-1 text-sm text-kadin-white focus:ring-1 focus:ring-kadin-gold outline-none"
-                      />
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-kadin-slate">
+                        Total Members
+                      </span>
+                      <span className="text-lg font-bold text-kadin-white">
+                        {stat.active_members}
+                      </span>
                     </div>
-                    <div>
-                      <label className="block text-xs text-kadin-slate mb-1">
-                        Messages Sent
-                      </label>
-                      <input
-                        type="number"
-                        value={stat.messages_sent}
-                        onChange={(e) =>
-                          handleUpdateEngagement(
-                            stat.id,
-                            "messages_sent",
-                            parseInt(e.target.value),
-                          )
-                        }
-                        className="w-full bg-kadin-light-navy border border-gray-600 rounded px-2 py-1 text-sm text-kadin-white focus:ring-1 focus:ring-kadin-gold outline-none"
-                      />
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-kadin-slate">
+                        Messages Exchanged
+                      </span>
+                      <span className="text-lg font-bold text-kadin-white">
+                        {stat.messages_sent}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -237,69 +383,78 @@ const InsightManagement: React.FC<InsightManagementProps> = ({ user }) => {
 
         {activeTab === "trends" && (
           <div className="space-y-4">
-            <h3 className="text-xl font-bold text-kadin-white">
-              Manage Industry Trends
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-bold text-kadin-white">
+                Industry Distribution
+              </h3>
+              <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">
+                Automated Sync
+              </span>
+            </div>
+            <p className="text-sm text-kadin-slate">
+              Real-time distribution of industries based on member profiles.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {industryTrends.map((trend) => (
+              {industryTrends.map((trend, idx) => (
                 <div
-                  key={trend.id}
-                  className="bg-kadin-navy p-4 rounded-lg border border-gray-700"
+                  key={idx}
+                  className="bg-kadin-navy p-6 rounded-lg border border-gray-700"
                 >
-                  <h4 className="font-bold text-kadin-gold mb-3">
-                    {trend.period}
+                  <h4 className="font-bold text-kadin-gold mb-4">
+                    Member Industry Mix
                   </h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs text-kadin-slate mb-1">
-                        Tech
-                      </label>
-                      <input
-                        type="number"
-                        value={trend.technology}
-                        onChange={(e) =>
-                          handleUpdateTrends(
-                            trend.id,
-                            "technology",
-                            parseInt(e.target.value),
-                          )
-                        }
-                        className="w-full bg-kadin-light-navy border border-gray-600 rounded px-2 py-1 text-sm text-kadin-white focus:ring-1 focus:ring-kadin-gold outline-none"
-                      />
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-kadin-light-slate">Technology</span>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-32 bg-gray-700 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-blue-500 h-full"
+                            style={{
+                              width: `${(trend.technology / (trend.technology + trend.agriculture + trend.manufacturing || 1)) * 100}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="text-kadin-white font-bold">
+                          {trend.technology}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs text-kadin-slate mb-1">
-                        Agri
-                      </label>
-                      <input
-                        type="number"
-                        value={trend.agriculture}
-                        onChange={(e) =>
-                          handleUpdateTrends(
-                            trend.id,
-                            "agriculture",
-                            parseInt(e.target.value),
-                          )
-                        }
-                        className="w-full bg-kadin-light-navy border border-gray-600 rounded px-2 py-1 text-sm text-kadin-white focus:ring-1 focus:ring-kadin-gold outline-none"
-                      />
+                    <div className="flex justify-between items-center">
+                      <span className="text-kadin-light-slate">
+                        Agriculture
+                      </span>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-32 bg-gray-700 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-green-500 h-full"
+                            style={{
+                              width: `${(trend.agriculture / (trend.technology + trend.agriculture + trend.manufacturing || 1)) * 100}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="text-kadin-white font-bold">
+                          {trend.agriculture}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs text-kadin-slate mb-1">
-                        Manuf
-                      </label>
-                      <input
-                        type="number"
-                        value={trend.manufacturing}
-                        onChange={(e) =>
-                          handleUpdateTrends(
-                            trend.id,
-                            "manufacturing",
-                            parseInt(e.target.value),
-                          )
-                        }
-                        className="w-full bg-kadin-light-navy border border-gray-600 rounded px-2 py-1 text-sm text-kadin-white focus:ring-1 focus:ring-kadin-gold outline-none"
-                      />
+                    <div className="flex justify-between items-center">
+                      <span className="text-kadin-light-slate">
+                        Manufacturing
+                      </span>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-32 bg-gray-700 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-orange-500 h-full"
+                            style={{
+                              width: `${(trend.manufacturing / (trend.technology + trend.agriculture + trend.manufacturing || 1)) * 100}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="text-kadin-white font-bold">
+                          {trend.manufacturing}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
