@@ -6,7 +6,13 @@ interface CommunityProps {
   user: UserProfile;
 }
 
-const GroupCard: React.FC<{ group: CommunityGroup }> = ({ group }) => (
+const GroupCard: React.FC<{
+  group: CommunityGroup;
+  isJoined: boolean;
+  onJoin: (groupId: string) => void;
+  onLeave: (groupId: string) => void;
+  isProcessing: boolean;
+}> = ({ group, isJoined, onJoin, onLeave, isProcessing }) => (
   <div
     className="bg-kadin-light-navy rounded-lg overflow-hidden border border-gray-700 flex flex-col transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer hover:border-kadin-gold/50 group"
     onClick={() => alert(`Navigating to group: ${group.name}`)}
@@ -39,10 +45,22 @@ const GroupCard: React.FC<{ group: CommunityGroup }> = ({ group }) => (
           {(group.member_count || 0).toLocaleString()} members
         </div>
         <button
-          className="bg-kadin-gold text-kadin-navy font-bold py-2 px-4 rounded-lg text-sm hover:bg-yellow-400 transition-colors"
-          onClick={(e) => e.stopPropagation()}
+          disabled={isProcessing}
+          className={`font-bold py-2 px-4 rounded-lg text-sm transition-colors ${
+            isJoined
+              ? "bg-gray-700 text-white hover:bg-red-600"
+              : "bg-kadin-gold text-kadin-navy hover:bg-yellow-400"
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isJoined) {
+              onLeave(group.id);
+            } else {
+              onJoin(group.id);
+            }
+          }}
         >
-          Join Group
+          {isProcessing ? "..." : isJoined ? "Leave" : "Join Now"}
         </button>
       </div>
     </div>
@@ -107,9 +125,20 @@ const EventCard: React.FC<{ event: CommunityEvent }> = ({ event }) => (
 );
 
 const Community: React.FC<CommunityProps> = ({ user }) => {
-  const { groups, loading, addGroup, refresh } = useCommunityGroups();
+  const {
+    groups,
+    joinedGroups,
+    loading,
+    addGroup,
+    joinGroup,
+    leaveGroup,
+    refresh,
+  } = useCommunityGroups(user?.id.toString());
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [processingGroupId, setProcessingGroupId] = useState<string | null>(
+    null,
+  );
   const [newGroup, setNewGroup] = useState({
     name: "",
     description: "",
@@ -118,6 +147,31 @@ const Community: React.FC<CommunityProps> = ({ user }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleJoin = async (groupId: string) => {
+    setProcessingGroupId(groupId);
+    try {
+      const result = await joinGroup(groupId);
+      if (!result.success) {
+        alert("Failed to join group: " + result.error);
+      }
+    } finally {
+      setProcessingGroupId(null);
+    }
+  };
+
+  const handleLeave = async (groupId: string) => {
+    if (!confirm("Are you sure you want to leave this group?")) return;
+    setProcessingGroupId(groupId);
+    try {
+      const result = await leaveGroup(groupId);
+      if (!result.success) {
+        alert("Failed to leave group: " + result.error);
+      }
+    } finally {
+      setProcessingGroupId(null);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -241,7 +295,16 @@ const Community: React.FC<CommunityProps> = ({ user }) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {groups.length > 0 ? (
-              groups.map((group) => <GroupCard key={group.id} group={group} />)
+              groups.map((group) => (
+                <GroupCard
+                  key={group.id}
+                  group={group}
+                  isJoined={joinedGroups.includes(group.id)}
+                  onJoin={handleJoin}
+                  onLeave={handleLeave}
+                  isProcessing={processingGroupId === group.id}
+                />
+              ))
             ) : (
               <div className="col-span-full text-center py-12 bg-kadin-light-navy/30 rounded-2xl border border-dashed border-gray-700">
                 <p className="text-kadin-slate">
