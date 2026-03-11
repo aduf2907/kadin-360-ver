@@ -169,6 +169,21 @@ export interface KadinDocument {
   created_at: string;
 }
 
+export interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  assigned_to: string;
+  department: string;
+  priority: "Low" | "Medium" | "High";
+  status: "Todo" | "In Progress" | "Completed" | "On Hold";
+  due_date: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  assignee_name?: string;
+}
+
 export interface Transaction {
   id: string;
   date: string;

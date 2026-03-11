@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Page, UserProfile } from "../types";
 import { useDocuments } from "@/src/hooks/useDocument";
 import { useCertificateRequests } from "@/src/hooks/useCertificateRequests";
+import { useActivities } from "@/src/hooks/useActivities";
 
 // Inline SVG Icons for simplicity
 const RefreshIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -272,6 +273,17 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
     createRequest,
     loading: requestsLoading,
   } = useCertificateRequests(user?.id.toString());
+  const {
+    activities,
+    loading: activitiesLoading,
+    updateActivity,
+  } = useActivities();
+
+  // Filter activities assigned to the current user that are not completed
+  const myActivities = activities.filter(
+    (act) =>
+      act.assigned_to === user?.id.toString() && act.status !== "Completed",
+  );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -368,6 +380,7 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
               <ActivitiesManagementIcon className="h-8 w-8 text-kadin-gold" />
             }
             buttonText="View Activities"
+            onClick={() => setCurrentPage("Activities Management")}
           />
           <ServiceCard
             title="Work Program Reporting"
@@ -488,6 +501,73 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* My Activities Section */}
+      {myActivities.length > 0 && (
+        <div className="mb-12">
+          <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+            <h3 className="text-2xl font-bold text-kadin-white">
+              My Activities
+            </h3>
+            <button
+              onClick={() => setCurrentPage("Activities Management")}
+              className="text-kadin-gold text-sm hover:underline"
+            >
+              Manage All
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {myActivities.map((activity) => (
+              <div
+                key={activity.id}
+                className="bg-kadin-light-navy p-4 rounded-lg border border-gray-700 flex flex-col"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-bold text-kadin-white line-clamp-1">
+                    {activity.title}
+                  </h4>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full ${
+                      activity.priority === "High"
+                        ? "bg-red-500/20 text-red-500"
+                        : activity.priority === "Medium"
+                          ? "bg-yellow-500/20 text-yellow-500"
+                          : "bg-blue-500/20 text-blue-500"
+                    }`}
+                  >
+                    {activity.priority}
+                  </span>
+                </div>
+                <p className="text-xs text-kadin-slate mb-4 line-clamp-2 flex-grow">
+                  {activity.description}
+                </p>
+                <div className="flex justify-between items-center mt-auto">
+                  <select
+                    value={activity.status}
+                    onChange={(e) =>
+                      updateActivity(activity.id, {
+                        status: e.target.value as any,
+                      })
+                    }
+                    className="bg-kadin-navy border border-gray-700 rounded p-1 text-[10px] text-kadin-slate outline-none"
+                  >
+                    <option value="Todo">Todo</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="On Hold">On Hold</option>
+                  </select>
+                  <span className="text-[10px] text-kadin-light-slate italic">
+                    Due:{" "}
+                    {activity.due_date
+                      ? new Date(activity.due_date).toLocaleDateString()
+                      : "No date"}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
