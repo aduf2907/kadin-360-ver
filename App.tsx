@@ -54,6 +54,7 @@ import LegalManagement from "./components/LegalManagement";
 import BusinessManagement from "./components/BusinessManagement";
 import BonafidityManagement from "./components/BonafidityManagement";
 import InsightManagement from "./components/InsightManagement";
+import DocumentManagement from "./components/DocumentManagement";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
 const LAST_PAGE_KEY = "kadin360-last-visited-page";
@@ -283,7 +284,7 @@ const App: React.FC = () => {
       case "Project Opportunities":
         return <ProjectOpportunities setCurrentPage={setCurrentPage} />;
       case "Document Hub":
-        return <DocumentHub />;
+        return <DocumentHub user={user} />;
       case "Bonafiditas":
         return <Bonafiditas user={user} />;
       case "Event Details":
@@ -333,6 +334,8 @@ const App: React.FC = () => {
         return <BonafidityManagement user={user} />;
       case "Insight Management":
         return <InsightManagement user={user} />;
+      case "Document Management":
+        return <DocumentManagement user={user} />;
     }
   };
 
