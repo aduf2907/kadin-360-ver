@@ -344,7 +344,7 @@ const Profile: React.FC<ProfileProps> = ({
               Interests
             </h4>
             <div className="flex flex-wrap gap-2">
-              {profile?.interests.map((interest) => (
+              {profile?.interests?.map((interest) => (
                 <span
                   key={interest}
                   className="text-xs bg-gray-700 text-kadin-light-slate px-3 py-1 rounded-full"

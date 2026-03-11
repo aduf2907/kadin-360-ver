@@ -1,6 +1,7 @@
-import React from "react";
-import { Page } from "../types";
+import React, { useState } from "react";
+import { Page, UserProfile } from "../types";
 import { useDocuments } from "@/src/hooks/useDocument";
+import { useCertificateRequests } from "@/src/hooks/useCertificateRequests";
 
 // Inline SVG Icons for simplicity
 const RefreshIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -200,6 +201,7 @@ const EvaluationIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 interface SecretariatProps {
   setCurrentPage: (page: Page) => void;
+  user: UserProfile | null;
 }
 
 const ServiceCard: React.FC<{
@@ -263,11 +265,52 @@ const DocumentLink: React.FC<{
   </a>
 );
 
-const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage }) => {
+const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
   const { documents, loading } = useDocuments();
+  const {
+    requests,
+    createRequest,
+    loading: requestsLoading,
+  } = useCertificateRequests(user?.id.toString());
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    type: "Membership Certificate",
+    purpose: "",
+  });
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsSubmitting(true);
+    const result = await createRequest(
+      formData.type,
+      formData.purpose,
+      user.id.toString(),
+    );
+    setIsSubmitting(false);
+
+    if (result.success) {
+      setNotification({
+        message: "Request submitted successfully!",
+        type: "success",
+      });
+      setIsModalOpen(false);
+      setFormData({ type: "Membership Certificate", purpose: "" });
+      setTimeout(() => setNotification(null), 3000);
+    } else {
+      setNotification({ message: "Error: " + result.error, type: "error" });
+    }
+  };
 
   return (
-    <div>
+    <div className="relative">
       <h2 className="text-3xl font-bold text-kadin-white mb-2">
         KADIN Secretariat
       </h2>
@@ -301,6 +344,7 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage }) => {
             description="Request official certificates of membership or participation for your business needs."
             icon={<CertificateIcon className="h-8 w-8 text-kadin-gold" />}
             buttonText="Request Certificate"
+            onClick={() => setIsModalOpen(true)}
           />
           <ServiceCard
             title="Document Management"
@@ -385,6 +429,69 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage }) => {
         )}
       </div>
 
+      {/* My Requests Section */}
+      {requests.length > 0 && (
+        <div className="mb-12">
+          <h3 className="text-2xl font-bold text-kadin-white mb-4 border-b border-gray-700 pb-2">
+            My Certificate Requests
+          </h3>
+          <div className="bg-kadin-light-navy rounded-xl border border-gray-700 overflow-hidden">
+            <table className="w-full text-sm text-left text-kadin-slate">
+              <thead className="text-xs text-kadin-light-slate uppercase bg-kadin-navy">
+                <tr>
+                  <th className="px-6 py-3">Type</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Date</th>
+                  <th className="px-6 py-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {requests.map((req) => (
+                  <tr
+                    key={req.id}
+                    className="hover:bg-kadin-navy/30 transition-colors"
+                  >
+                    <td className="px-6 py-4 font-medium text-kadin-white">
+                      {req.type}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                          req.status === "approved"
+                            ? "bg-green-500/20 text-green-500"
+                            : req.status === "rejected"
+                              ? "bg-red-500/20 text-red-500"
+                              : "bg-yellow-500/20 text-yellow-500"
+                        }`}
+                      >
+                        {req.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {new Date(req.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {req.status === "approved" && req.certificate_url ? (
+                        <a
+                          href={req.certificate_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-kadin-gold hover:underline font-bold"
+                        >
+                          Download
+                        </a>
+                      ) : (
+                        <span className="text-gray-600 italic">Processing</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Contact & Support Section */}
       <div>
         <h3 className="text-2xl font-bold text-kadin-white mb-4 border-b border-gray-700 pb-2">
@@ -440,6 +547,86 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage }) => {
           </div>
         </div>
       </div>
+      {/* Request Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-kadin-light-navy border border-gray-700 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-bold text-white mb-4">
+              Request Certificate
+            </h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-kadin-slate mb-1">
+                  Certificate Type
+                </label>
+                <select
+                  className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                  value={formData.type}
+                  onChange={(e) =>
+                    setFormData({ ...formData, type: e.target.value })
+                  }
+                >
+                  <option value="Membership Certificate">
+                    Membership Certificate (KTA)
+                  </option>
+                  <option value="Certificate of Participation">
+                    Certificate of Participation
+                  </option>
+                  <option value="Letter of Good Standing">
+                    Letter of Good Standing
+                  </option>
+                  <option value="Business Recommendation">
+                    Business Recommendation
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-kadin-slate mb-1">
+                  Purpose / Description
+                </label>
+                <textarea
+                  required
+                  className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none h-32 resize-none"
+                  value={formData.purpose}
+                  onChange={(e) =>
+                    setFormData({ ...formData, purpose: e.target.value })
+                  }
+                  placeholder="Explain why you need this certificate..."
+                />
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 bg-gray-700 text-white font-bold py-3 rounded-xl hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={isSubmitting}
+                  type="submit"
+                  className="flex-1 bg-kadin-gold text-kadin-navy font-bold py-3 rounded-xl hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Request"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Notification */}
+      {notification && (
+        <div
+          className={`fixed bottom-8 right-8 p-4 rounded-xl shadow-2xl z-50 animate-bounce ${
+            notification.type === "success"
+              ? "bg-green-500 text-white"
+              : "bg-red-500 text-white"
+          }`}
+        >
+          {notification.message}
+        </div>
+      )}
     </div>
   );
 };

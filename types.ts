@@ -41,6 +41,8 @@ export type Page =
   | "Legal Management"
   | "Business Management"
   | "Bonafidity Management"
+  | "Document Management"
+  | "Certificate Management"
   | "Insight Management";
 
 export interface NewsArticle {
@@ -141,6 +143,30 @@ export interface UserProfile {
   bonafidityStatus: "Green" | "Yellow" | "Red" | "Black";
   rating: number;
   reviews?: UserReview[];
+}
+
+export interface CertificateRequest {
+  id: string;
+  user_id: string;
+  type: string;
+  purpose: string;
+  status: "pending" | "approved" | "rejected";
+  admin_notes?: string;
+  certificate_url?: string;
+  created_at: string;
+  updated_at: string;
+  user_name?: string;
+}
+export interface KadinDocument {
+  id: string;
+  title: string;
+  description: string;
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  uploaded_by: string;
+  created_at: string;
 }
 
 export interface Transaction {

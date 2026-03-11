@@ -222,6 +222,12 @@ export const navCategories: NavCategory[] = [
         adminOnly: true,
       },
       {
+        page: "Certificate Management",
+        icon: <BonafiditasIcon className="h-6 w-6" />,
+        label: "Certificates",
+        adminOnly: true,
+      },
+      {
         page: "Community Management",
         icon: <CommunityIcon className="h-6 w-6" />,
         label: "Community",

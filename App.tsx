@@ -55,6 +55,7 @@ import BusinessManagement from "./components/BusinessManagement";
 import BonafidityManagement from "./components/BonafidityManagement";
 import InsightManagement from "./components/InsightManagement";
 import DocumentManagement from "./components/DocumentManagement";
+import CertificateManagement from "./components/CertificateManagement";
 
 const ACTIVITY_LOG_KEY = "kadin360-user-activity";
 const LAST_PAGE_KEY = "kadin360-last-visited-page";
@@ -258,7 +259,7 @@ const App: React.FC = () => {
       case "Franchise":
         return <Franchise />;
       case "Secretariat":
-        return <Secretariat setCurrentPage={setCurrentPage} />;
+        return <Secretariat setCurrentPage={setCurrentPage} user={user} />;
       case "HalloHukum":
         return <HalloHukum user={user} />;
       case "Business Advisor":
@@ -336,6 +337,8 @@ const App: React.FC = () => {
         return <InsightManagement user={user} />;
       case "Document Management":
         return <DocumentManagement user={user} />;
+      case "Certificate Management":
+        return <CertificateManagement />;
     }
   };
 
