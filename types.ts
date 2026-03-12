@@ -432,6 +432,33 @@ export interface BusinessConsultation {
   user_name?: string;
 }
 
+// export interface WorkProgram {
+//   id: string;
+//   title: string;
+//   description: string;
+//   department: string;
+//   start_date: string;
+//   end_date: string;
+//   budget: number;
+//   status: "Planned" | "In Progress" | "Completed" | "On Hold";
+//   created_by: string;
+//   created_at: string;
+// }
+
+export interface WorkProgramReport {
+  id: string;
+  title: string;
+  description: string;
+  program_name: string;
+  report_file_url: string;
+  status: "Pending" | "Approved" | "Revision Required";
+  feedback?: string;
+  submitted_by: string;
+  created_at: string;
+  updated_at: string;
+  user_name?: string; // Untuk UI
+}
+
 export interface BusinessAdvisor {
   id: string;
   name: string;

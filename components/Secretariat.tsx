@@ -3,6 +3,8 @@ import { Page, UserProfile } from "../types";
 import { useDocuments } from "@/src/hooks/useDocument";
 import { useCertificateRequests } from "@/src/hooks/useCertificateRequests";
 import { useActivities } from "@/src/hooks/useActivities";
+import { useWorkProgramReports } from "@/src/hooks/useWorkProgramReports.ts";
+import { WorkProgramReport } from "../types";
 
 // Inline SVG Icons for simplicity
 const RefreshIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -278,6 +280,13 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
     loading: activitiesLoading,
     updateActivity,
   } = useActivities();
+  const {
+    reports,
+    submitReport,
+    updateReportStatus,
+    uploadReportFile,
+    loading: reportsLoading,
+  } = useWorkProgramReports(user?.is_admin ? undefined : user?.id.toString());
 
   // Filter activities assigned to the current user that are not completed
   const myActivities = activities.filter(
@@ -286,11 +295,18 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
   );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     type: "Membership Certificate",
     purpose: "",
   });
+  const [reportFormData, setReportFormData] = useState({
+    title: "",
+    program_name: "",
+    description: "",
+  });
+  const [reportFile, setReportFile] = useState<File | null>(null);
   const [notification, setNotification] = useState<{
     message: string;
     type: "success" | "error";
@@ -315,6 +331,72 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
       });
       setIsModalOpen(false);
       setFormData({ type: "Membership Certificate", purpose: "" });
+      setTimeout(() => setNotification(null), 3000);
+    } else {
+      setNotification({ message: "Error: " + result.error, type: "error" });
+    }
+  };
+
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsSubmitting(true);
+
+    let fileUrl = "";
+    if (reportFile) {
+      const uploadResult = await uploadReportFile(reportFile);
+      if (uploadResult.success && uploadResult.url) {
+        fileUrl = uploadResult.url;
+      } else {
+        setNotification({
+          message: "File upload failed: " + uploadResult.error,
+          type: "error",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    const result = await submitReport({
+      ...reportFormData,
+      report_file_url: fileUrl,
+    });
+    setIsSubmitting(false);
+
+    if (result.success) {
+      setNotification({
+        message: "Report submitted successfully!",
+        type: "success",
+      });
+      setIsReportModalOpen(false);
+      setReportFormData({ title: "", program_name: "", description: "" });
+      setReportFile(null);
+      setTimeout(() => setNotification(null), 3000);
+    } else {
+      setNotification({ message: "Error: " + result.error, type: "error" });
+    }
+  };
+
+  const handleReportStatusUpdate = async (
+    id: string,
+    status: WorkProgramReport["status"],
+  ) => {
+    const feedback =
+      status === "Revision Required"
+        ? prompt("Enter feedback for revision:")
+        : undefined;
+    if (status === "Revision Required" && feedback === null) return;
+
+    setIsSubmitting(true);
+    const result = await updateReportStatus(id, status, feedback || undefined);
+    setIsSubmitting(false);
+
+    if (result.success) {
+      setNotification({
+        message: `Report ${status.toLowerCase()} successfully!`,
+        type: "success",
+      });
       setTimeout(() => setNotification(null), 3000);
     } else {
       setNotification({ message: "Error: " + result.error, type: "error" });
@@ -386,7 +468,8 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
             title="Work Program Reporting"
             description="Submit, monitor, and review the progress of work programs and initiatives from various departments."
             icon={<ReportingIcon className="h-8 w-8 text-kadin-gold" />}
-            buttonText="Go to Reporting"
+            buttonText="Submit Report"
+            onClick={() => setIsReportModalOpen(true)}
           />
           <ServiceCard
             title="Evaluation System"
@@ -572,6 +655,100 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
         </div>
       )}
 
+      {/* Work Program Reports Section */}
+      {reports.length > 0 && (
+        <div className="mb-12">
+          <h3 className="text-2xl font-bold text-kadin-white mb-4 border-b border-gray-700 pb-2">
+            Work Program Reports
+          </h3>
+          <div className="bg-kadin-light-navy rounded-lg border border-gray-700 overflow-hidden">
+            <table className="w-full text-sm text-left text-kadin-slate">
+              <thead className="text-xs text-kadin-light-slate uppercase bg-kadin-navy">
+                <tr>
+                  <th className="px-6 py-3">Program / Title</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Submitted By</th>
+                  <th className="px-6 py-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {reports.map((rep) => (
+                  <tr
+                    key={rep.id}
+                    className="hover:bg-kadin-navy/30 transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-kadin-white">
+                        {rep.program_name}
+                      </div>
+                      <div className="text-xs text-kadin-slate">
+                        {rep.title}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                          rep.status === "Approved"
+                            ? "bg-green-500/20 text-green-500"
+                            : rep.status === "Revision Required"
+                              ? "bg-red-500/20 text-red-500"
+                              : "bg-yellow-500/20 text-yellow-500"
+                        }`}
+                      >
+                        {rep.status}
+                      </span>
+                      {rep.feedback && (
+                        <p className="text-[10px] mt-1 text-red-400 italic">
+                          "{rep.feedback}"
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">{rep.user_name || "Unknown"}</td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        {rep.report_file_url && (
+                          <a
+                            href={rep.report_file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-kadin-gold hover:underline font-bold text-xs bg-kadin-navy px-2 py-1 rounded border border-gray-700"
+                          >
+                            View
+                          </a>
+                        )}
+                        {user?.is_admin && rep.status === "Pending" && (
+                          <>
+                            <button
+                              onClick={() =>
+                                handleReportStatusUpdate(rep.id, "Approved")
+                              }
+                              className="text-green-500 hover:underline font-bold text-xs bg-kadin-navy px-2 py-1 rounded border border-gray-700"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleReportStatusUpdate(
+                                  rep.id,
+                                  "Revision Required",
+                                )
+                              }
+                              className="text-red-500 hover:underline font-bold text-xs bg-kadin-navy px-2 py-1 rounded border border-gray-700"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Contact & Support Section */}
       <div>
         <h3 className="text-2xl font-bold text-kadin-white mb-4 border-b border-gray-700 pb-2">
@@ -688,6 +865,102 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
                   className="flex-1 bg-kadin-gold text-kadin-navy font-bold py-3 rounded-xl hover:bg-yellow-400 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Request"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-kadin-light-navy border border-gray-700 rounded-2xl p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h3 className="text-2xl font-bold text-white mb-4">
+              Submit Work Program Report
+            </h3>
+            <form onSubmit={handleReportSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-kadin-slate mb-1">
+                  Program Name
+                </label>
+                <input
+                  required
+                  type="text"
+                  className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                  value={reportFormData.program_name}
+                  onChange={(e) =>
+                    setReportFormData({
+                      ...reportFormData,
+                      program_name: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. UMKM Digitalization 2024"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-kadin-slate mb-1">
+                  Report Title
+                </label>
+                <input
+                  required
+                  type="text"
+                  className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                  value={reportFormData.title}
+                  onChange={(e) =>
+                    setReportFormData({
+                      ...reportFormData,
+                      title: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. Monthly Progress Report - October"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-kadin-slate mb-1">
+                  Description / Summary
+                </label>
+                <textarea
+                  required
+                  className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none h-24 resize-none"
+                  value={reportFormData.description}
+                  onChange={(e) =>
+                    setReportFormData({
+                      ...reportFormData,
+                      description: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-kadin-slate mb-1">
+                  Report File (PDF/Doc)
+                </label>
+                <input
+                  required
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-kadin-gold file:text-kadin-navy hover:file:bg-yellow-400"
+                  onChange={(e) => setReportFile(e.target.files?.[0] || null)}
+                />
+                <p className="text-[10px] text-kadin-slate mt-1">
+                  Upload your report file directly.
+                </p>
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsReportModalOpen(false)}
+                  className="flex-1 bg-gray-700 text-white font-bold py-3 rounded-xl hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={isSubmitting}
+                  type="submit"
+                  className="flex-1 bg-kadin-gold text-kadin-navy font-bold py-3 rounded-xl hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Report"}
                 </button>
               </div>
             </form>
