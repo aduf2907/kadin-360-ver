@@ -4,7 +4,8 @@ import { useDocuments } from "@/src/hooks/useDocument";
 import { useCertificateRequests } from "@/src/hooks/useCertificateRequests";
 import { useActivities } from "@/src/hooks/useActivities";
 import { useWorkProgramReports } from "@/src/hooks/useWorkProgramReports.ts";
-import { WorkProgramReport } from "../types";
+import { useEvaluations } from "@/src/hooks/useEvaluations";
+import { WorkProgramReport, ProgramEvaluation } from "../types";
 
 // Inline SVG Icons for simplicity
 const RefreshIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -287,6 +288,11 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
     uploadReportFile,
     loading: reportsLoading,
   } = useWorkProgramReports(user?.is_admin ? undefined : user?.id.toString());
+  const {
+    evaluations,
+    submitEvaluation,
+    loading: evaluationsLoading,
+  } = useEvaluations();
 
   // Filter activities assigned to the current user that are not completed
   const myActivities = activities.filter(
@@ -296,6 +302,7 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     type: "Membership Certificate",
@@ -305,6 +312,13 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
     title: "",
     program_name: "",
     description: "",
+  });
+  const [evaluationFormData, setEvaluationFormData] = useState({
+    report_id: "",
+    impact_score: 5,
+    efficiency_score: 5,
+    engagement_score: 5,
+    comments: "",
   });
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [notification, setNotification] = useState<{
@@ -403,6 +417,33 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
     }
   };
 
+  const handleEvaluationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !evaluationFormData.report_id) return;
+
+    setIsSubmitting(true);
+    const result = await submitEvaluation(evaluationFormData);
+    setIsSubmitting(false);
+
+    if (result.success) {
+      setNotification({
+        message: "Evaluation submitted successfully!",
+        type: "success",
+      });
+      setIsEvaluationModalOpen(false);
+      setEvaluationFormData({
+        report_id: "",
+        impact_score: 5,
+        efficiency_score: 5,
+        engagement_score: 5,
+        comments: "",
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } else {
+      setNotification({ message: "Error: " + result.error, type: "error" });
+    }
+  };
+
   return (
     <div className="relative">
       <h2 className="text-3xl font-bold text-kadin-white mb-2">
@@ -454,6 +495,9 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
             description="A comprehensive tool for planning, executing, and managing registrations for KADIN events and webinars."
             icon={<EventManagementIcon className="h-8 w-8 text-kadin-gold" />}
             buttonText="Manage Events"
+            onClick={() =>
+              window.open("https://kadin-membership.netlify.app/", "_blank")
+            }
           />
           <ServiceCard
             title="Activities Management"
@@ -476,6 +520,7 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
             description="Evaluate the effectiveness and impact of completed programs and activities with our integrated system."
             icon={<EvaluationIcon className="h-8 w-8 text-kadin-gold" />}
             buttonText="Start Evaluation"
+            onClick={() => setIsEvaluationModalOpen(true)}
           />
         </div>
       </div>
@@ -649,6 +694,71 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
                       : "No date"}
                   </span>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Evaluation Results Section (Admin Only) */}
+      {user?.is_admin && evaluations.length > 0 && (
+        <div className="mb-12">
+          <h3 className="text-2xl font-bold text-kadin-white mb-4 border-b border-gray-700 pb-2">
+            Program Evaluations
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {evaluations.map((evalItem) => (
+              <div
+                key={evalItem.id}
+                className="bg-kadin-light-navy border border-gray-700 rounded-xl p-6"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="font-bold text-kadin-white text-lg">
+                      {evalItem.program_name}
+                    </h4>
+                    <p className="text-xs text-kadin-slate">
+                      {evalItem.report_title}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-kadin-light-slate">
+                      Evaluator: {evalItem.evaluator_name}
+                    </div>
+                    <div className="text-[10px] text-kadin-slate">
+                      {new Date(evalItem.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="bg-kadin-navy p-2 rounded text-center">
+                    <div className="text-[10px] text-kadin-slate uppercase">
+                      Impact
+                    </div>
+                    <div className="text-kadin-gold font-bold">
+                      {evalItem.impact_score}/5
+                    </div>
+                  </div>
+                  <div className="bg-kadin-navy p-2 rounded text-center">
+                    <div className="text-[10px] text-kadin-slate uppercase">
+                      Efficiency
+                    </div>
+                    <div className="text-kadin-gold font-bold">
+                      {evalItem.efficiency_score}/5
+                    </div>
+                  </div>
+                  <div className="bg-kadin-navy p-2 rounded text-center">
+                    <div className="text-[10px] text-kadin-slate uppercase">
+                      Engagement
+                    </div>
+                    <div className="text-kadin-gold font-bold">
+                      {evalItem.engagement_score}/5
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-kadin-light-slate italic">
+                  "{evalItem.comments}"
+                </p>
               </div>
             ))}
           </div>
@@ -865,6 +975,136 @@ const Secretariat: React.FC<SecretariatProps> = ({ setCurrentPage, user }) => {
                   className="flex-1 bg-kadin-gold text-kadin-navy font-bold py-3 rounded-xl hover:bg-yellow-400 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Request"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Evaluation Modal */}
+      {isEvaluationModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-kadin-light-navy border border-gray-700 rounded-2xl p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h3 className="text-2xl font-bold text-white mb-4">
+              Program Evaluation
+            </h3>
+            <form onSubmit={handleEvaluationSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-kadin-slate mb-1">
+                  Select Program/Report
+                </label>
+                <select
+                  required
+                  className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                  value={evaluationFormData.report_id}
+                  onChange={(e) =>
+                    setEvaluationFormData({
+                      ...evaluationFormData,
+                      report_id: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">-- Choose Approved Report --</option>
+                  {reports
+                    .filter((r) => r.status === "Approved")
+                    .map((report) => (
+                      <option key={report.id} value={report.id}>
+                        {report.program_name} - {report.title}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-[10px] font-medium text-kadin-slate mb-1 uppercase">
+                    Impact (1-5)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                    value={evaluationFormData.impact_score}
+                    onChange={(e) =>
+                      setEvaluationFormData({
+                        ...evaluationFormData,
+                        impact_score: parseInt(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-kadin-slate mb-1 uppercase">
+                    Efficiency (1-5)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                    value={evaluationFormData.efficiency_score}
+                    onChange={(e) =>
+                      setEvaluationFormData({
+                        ...evaluationFormData,
+                        efficiency_score: parseInt(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-kadin-slate mb-1 uppercase">
+                    Engagement (1-5)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none"
+                    value={evaluationFormData.engagement_score}
+                    onChange={(e) =>
+                      setEvaluationFormData({
+                        ...evaluationFormData,
+                        engagement_score: parseInt(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-kadin-slate mb-1">
+                  Comments & Qualitative Feedback
+                </label>
+                <textarea
+                  required
+                  className="w-full bg-kadin-navy border border-gray-700 rounded-xl p-3 text-white focus:ring-1 focus:ring-kadin-gold outline-none h-24 resize-none"
+                  value={evaluationFormData.comments}
+                  onChange={(e) =>
+                    setEvaluationFormData({
+                      ...evaluationFormData,
+                      comments: e.target.value,
+                    })
+                  }
+                  placeholder="Provide detailed feedback on program effectiveness..."
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEvaluationModalOpen(false)}
+                  className="flex-1 bg-gray-700 text-white font-bold py-3 rounded-xl hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={isSubmitting || !evaluationFormData.report_id}
+                  type="submit"
+                  className="flex-1 bg-kadin-gold text-kadin-navy font-bold py-3 rounded-xl hover:bg-yellow-400 transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Evaluation"}
                 </button>
               </div>
             </form>
