@@ -296,7 +296,17 @@ const Profile: React.FC<ProfileProps> = ({
                       VALID THRU
                     </p>
                     <p className="font-mono text-sm text-kadin-light-slate">
-                      {profile?.validThru}
+                      {user.created_at
+                        ? (() => {
+                            const date = new Date(user.created_at);
+                            date.setDate(date.getDate() + 30);
+                            return date.toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "2-digit",
+                            });
+                          })()
+                        : user.validThru}
                     </p>
                   </div>
                   <img

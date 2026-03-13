@@ -34,13 +34,15 @@ export const useMessages = (currentUserId: string) => {
         .from("conversations")
         .select(
           `
-                    *,
+                    id, created_at, user_1, user_2,
                     user1_profile:users!conversations_user_1_fkey(id, name, avatar_url, company, role),
-                    user2_profile:users!conversations_user_2_fkey(id, name, avatar_url, company, role)
+                    user2_profile:users!conversations_user_2_fkey(id, name, avatar_url, company, role),
+                    messages(id, content, created_at, sender_id)
                 `,
         )
         .or(`user_1.eq.${currentUserId},user_2.eq.${currentUserId}`)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(50);
 
       if (error) throw error;
 
@@ -50,6 +52,16 @@ export const useMessages = (currentUserId: string) => {
             conv.user_1 === currentUserId
               ? conv.user2_profile
               : conv.user1_profile;
+          // Get the latest message
+          const lastMessage =
+            conv.messages && conv.messages.length > 0
+              ? conv.messages.sort(
+                  (a: any, b: any) =>
+                    new Date(b.created_at).getTime() -
+                    new Date(a.created_at).getTime(),
+                )[0]
+              : null;
+
           return {
             ...conv,
             other_user: {
@@ -59,6 +71,7 @@ export const useMessages = (currentUserId: string) => {
               company: otherUser.company,
               role: otherUser.role,
             },
+            last_message: lastMessage,
           };
         });
         setConversations(mapped);
@@ -75,9 +88,10 @@ export const useMessages = (currentUserId: string) => {
       setMessagesLoading(true);
       const { data, error } = await supabase
         .from("messages")
-        .select("*")
+        .select("id, created_at, conversation_id, sender_id, content")
         .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: true })
+        .limit(100);
 
       if (error) throw error;
       setMessages(data || []);

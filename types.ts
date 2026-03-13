@@ -143,6 +143,7 @@ export interface UserProfile {
   bonafidityStatus: "Green" | "Yellow" | "Red" | "Black";
   rating: number;
   reviews?: UserReview[];
+  created_at?: string;
 }
 
 export interface CertificateRequest {

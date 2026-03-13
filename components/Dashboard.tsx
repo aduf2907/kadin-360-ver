@@ -7,6 +7,10 @@ import ChatbotIcon from "./icons/ChatbotIcon";
 import { useNews } from "@/src/hooks/useNews";
 import { useEvents } from "@/src/hooks/useEvents";
 import { useMatching } from "@/src/hooks/useMarching";
+import { useMessages } from "@/src/hooks/useMessage";
+import { useDiscussions } from "@/src/hooks/useDiscussions";
+import { useKnowledge } from "@/src/hooks/useKnowledge";
+import supabase from "@/src/supabase-client";
 
 const ChevronRightIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -176,76 +180,23 @@ const CursorClickIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const stats = [
-  {
-    label: "Jumlah Member",
-    value: "1,250",
-    icon: <UsersIcon className="h-8 w-8 text-kadin-gold" />,
-  },
-  {
-    label: "Jumlah Mitra",
-    value: "340",
-    icon: <BriefcaseIcon className="h-8 w-8 text-kadin-gold" />,
-  },
-  {
-    label: "Jumlah Project",
-    value: "89",
-    icon: <ClipboardListIcon className="h-8 w-8 text-kadin-gold" />,
-  },
-  {
-    label: "Jumlah Kerjasama",
-    value: "152",
-    icon: <HandshakeIcon className="h-8 w-8 text-kadin-gold" />,
-  },
-  {
-    label: "Jumlah Peluang Bisnis",
-    value: "218",
-    icon: <LightbulbIcon className="h-8 w-8 text-kadin-gold" />,
-  },
-  {
-    label: "Nilai Value Bisnis",
-    value: "IDR 5.7 T",
-    icon: <TrendingUpIcon className="h-8 w-8 text-kadin-gold" />,
-  },
-];
-
 const StatCard: React.FC<{
-  stat: { label: string; value: string; icon: React.ReactNode };
-}> = ({ stat }) => (
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+}> = ({ label, value, icon }) => (
   <div className="bg-kadin-light-navy p-5 rounded-lg border border-gray-700 flex items-center space-x-4">
     <div className="bg-kadin-navy p-3 rounded-full border border-kadin-gold/20">
-      {stat.icon}
+      {icon}
     </div>
     <div>
-      <p className="text-sm text-kadin-slate">{stat.label}</p>
-      <p className="text-2xl font-bold text-kadin-white">{stat.value}</p>
+      <p className="text-sm text-kadin-slate">{label}</p>
+      <p className="text-2xl font-bold text-kadin-white">
+        {typeof value === "number" ? value.toLocaleString() : value}
+      </p>
     </div>
   </div>
 );
-
-const mockNews: NewsArticle[] = [
-  {
-    id: 1,
-    title: "KADIN Partners with Government on New Digital Economy Initiative",
-    category: "Press Release",
-    summary: "",
-    date: "Oct 25, 2024",
-  },
-  {
-    id: 2,
-    title: "Market Update: Manufacturing Sector Shows 5% Growth in Q3",
-    category: "Market Insight",
-    summary: "",
-    date: "Oct 22, 2024",
-  },
-  {
-    id: 3,
-    title: "Registration Open for the Annual KADIN National Conference 2024",
-    category: "Event",
-    summary: "",
-    date: "Oct 20, 2024",
-  },
-];
 
 interface DashboardProps {
   setCurrentPage: (page: Page) => void;
@@ -260,6 +211,81 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
   const { news } = useNews(3);
   const { events } = useEvents(3);
   const { partners, loading } = useMatching();
+  const { conversations, loading: messagesLoading } = useMessages(
+    user.id.toString(),
+  );
+  const { discussions, loading: discussionsLoading } = useDiscussions();
+  const { entries: knowledgeEntries, loading: knowledgeLoading } =
+    useKnowledge(true);
+  const [stats, setStats] = useState({
+    members: 0,
+    partners: 0,
+    projects: 0,
+    collaborations: 0,
+    businessOpportunities: 0,
+    businessValue: "-",
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [
+          { count: memberCount },
+          { count: partnerCount },
+          { count: projectCount },
+          { count: franchiseCount },
+          { count: collaborationCount },
+          { data: transactionData },
+        ] = await Promise.all([
+          supabase.from("users").select("*", { count: "exact", head: true }),
+          supabase
+            .from("kadin_partners")
+            .select("*", { count: "exact", head: true }),
+          supabase
+            .from("project_opportunities")
+            .select("*", { count: "exact", head: true }),
+          supabase
+            .from("franchises")
+            .select("*", { count: "exact", head: true }),
+          supabase
+            .from("conversations")
+            .select("*", { count: "exact", head: true }),
+          supabase.from("transactions").select("amount"),
+        ]);
+
+        const totalValue = (transactionData || []).reduce(
+          (sum, tx) => sum + (tx.amount || 0),
+          0,
+        );
+        let formattedValue = "-";
+
+        if (totalValue > 0) {
+          if (totalValue >= 1000000000000) {
+            formattedValue = `IDR ${(totalValue / 1000000000000).toFixed(1)} T`;
+          } else if (totalValue >= 1000000000) {
+            formattedValue = `IDR ${(totalValue / 1000000000).toFixed(1)} B`;
+          } else if (totalValue >= 1000000) {
+            formattedValue = `IDR ${(totalValue / 1000000).toFixed(1)} M`;
+          } else {
+            formattedValue = `IDR ${totalValue.toLocaleString()}`;
+          }
+        }
+
+        setStats({
+          members: memberCount ?? 0,
+          partners: partnerCount ?? 0,
+          projects: projectCount ?? 0,
+          collaborations: collaborationCount ?? 0,
+          businessOpportunities: franchiseCount ?? 0,
+          businessValue: formattedValue,
+        });
+      } catch (err) {
+        console.error("Error fetching dashboard stats:", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -384,9 +410,36 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
 
       {/* Stats Section */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        {stats.map((stat) => (
-          <StatCard key={stat.label} stat={stat} />
-        ))}
+        <StatCard
+          label="Jumlah Member"
+          value={stats.members}
+          icon={<UsersIcon className="h-8 w-8 text-kadin-gold" />}
+        />
+        <StatCard
+          label="Jumlah Mitra"
+          value={stats.partners}
+          icon={<BriefcaseIcon className="h-8 w-8 text-kadin-gold" />}
+        />
+        <StatCard
+          label="Jumlah Project"
+          value={stats.projects}
+          icon={<ClipboardListIcon className="h-8 w-8 text-kadin-gold" />}
+        />
+        <StatCard
+          label="Jumlah Kerjasama"
+          value={stats.collaborations}
+          icon={<HandshakeIcon className="h-8 w-8 text-kadin-gold" />}
+        />
+        <StatCard
+          label="Jumlah Peluang Bisnis"
+          value={stats.businessOpportunities}
+          icon={<LightbulbIcon className="h-8 w-8 text-kadin-gold" />}
+        />
+        <StatCard
+          label="Nilai Value Bisnis"
+          value={stats.businessValue}
+          icon={<TrendingUpIcon className="h-8 w-8 text-kadin-gold" />}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -472,50 +525,114 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
           title="New Messages"
           onClick={() => setCurrentPage("Communication")}
         >
-          <ul className="space-y-3">
-            <li className="flex items-center text-sm">
-              <img
-                src="https://picsum.photos/id/1027/50/50"
-                className="h-8 w-8 rounded-full mr-3"
-                alt="sender"
-              />
-              <div className="flex-1">
-                <p className="font-semibold text-kadin-white">Andi Wijaya</p>
-                <p className="text-xs text-kadin-slate truncate">
-                  Sure, let's connect next week...
-                </p>
-              </div>
-            </li>
-            <li className="flex items-center text-sm">
-              <img
-                src="https://picsum.photos/id/1011/50/50"
-                className="h-8 w-8 rounded-full mr-3"
-                alt="sender"
-              />
-              <div className="flex-1">
-                <p className="font-semibold text-kadin-white">Citra Lestari</p>
-                <p className="text-xs text-kadin-slate truncate">
-                  Here is the proposal you requested.
-                </p>
-              </div>
-            </li>
-          </ul>
+          {messagesLoading ? (
+            <div className="flex items-center text-xs text-kadin-slate">
+              <svg
+                className="animate-spin h-4 w-4 mr-2 text-kadin-gold"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Loading messages...
+            </div>
+          ) : conversations.length === 0 ? (
+            <p className="text-sm text-kadin-slate italic">
+              Belum ada pesan baru.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {conversations.slice(0, 2).map((conv) => (
+                <li key={conv.id} className="flex items-center text-sm">
+                  <img
+                    src={
+                      conv.other_user?.avatar ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.other_user?.name || "")}&background=random`
+                    }
+                    className="h-8 w-8 rounded-full mr-3 object-cover"
+                    alt={conv.other_user?.name}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-kadin-white truncate">
+                      {conv.other_user?.name}
+                    </p>
+                    <p className="text-xs text-kadin-slate truncate">
+                      {conv.last_message?.content || "No messages yet"}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
 
         <Card
           title="Learning Progress"
           onClick={() => setCurrentPage("Knowledge")}
         >
-          <div className="space-y-3">
-            <p className="text-sm">Export Strategy Masterclass</p>
-            <div className="w-full bg-gray-700 rounded-full h-2.5">
-              <div
-                className="bg-kadin-gold h-2.5 rounded-full"
-                style={{ width: "75%" }}
-              ></div>
+          {knowledgeLoading ? (
+            <div className="flex items-center text-xs text-kadin-slate">
+              <svg
+                className="animate-spin h-4 w-4 mr-2 text-kadin-gold"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Loading learning...
             </div>
-            <p className="text-right text-xs">75% Complete</p>
-          </div>
+          ) : knowledgeEntries.filter((e) => e.category === "E-Learning")
+              .length === 0 ? (
+            <p className="text-sm text-kadin-slate italic">
+              Belum ada materi e-learning tersedia.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {knowledgeEntries
+                .filter((e) => e.category === "E-Learning")
+                .slice(0, 2)
+                .map((item, index) => (
+                  <div key={item.id} className="space-y-2">
+                    <p className="text-sm font-medium text-kadin-white truncate">
+                      {item.title}
+                    </p>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-kadin-gold h-2 rounded-full transition-all duration-500"
+                        style={{ width: index === 0 ? "75%" : "30%" }}
+                      ></div>
+                    </div>
+                    <p className="text-right text-[10px] text-kadin-slate">
+                      {index === 0 ? "75%" : "30%"} Complete
+                    </p>
+                  </div>
+                ))}
+            </div>
+          )}
         </Card>
 
         <Card
@@ -577,46 +694,61 @@ const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, user }) => {
             title="Recent Forum Discussions"
             onClick={() => setCurrentPage("KADINers Rooms")}
           >
-            <div className="divide-y divide-gray-700">
-              <div className="py-3 flex justify-between items-center">
-                <div>
-                  <h4 className="font-semibold text-kadin-white hover:text-kadin-gold cursor-pointer">
-                    Regulatory Update: New Export Tax Policy
-                  </h4>
-                  <p className="text-sm text-kadin-slate">
-                    Posted in 'Investment & Policy' by Rina Hartono
-                  </p>
-                </div>
-                <ChevronRightIcon className="h-5 w-5 text-kadin-slate" />
+            {discussionsLoading ? (
+              <div className="flex items-center text-xs text-kadin-slate py-4">
+                <svg
+                  className="animate-spin h-4 w-4 mr-2 text-kadin-gold"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Loading discussions...
               </div>
-              <div className="py-3 flex justify-between items-center">
-                <div>
-                  <h4 className="font-semibold text-kadin-white hover:text-kadin-gold cursor-pointer">
-                    Opportunities in Renewable Energy Sector
-                  </h4>
-                  <p className="text-sm text-kadin-slate">
-                    Posted in 'Energy & Resources' by Admin
-                  </p>
-                </div>
-                <ChevronRightIcon className="h-5 w-5 text-kadin-slate" />
+            ) : discussions.length === 0 ? (
+              <p className="text-sm text-kadin-slate italic py-4">
+                Belum ada diskusi forum terbaru.
+              </p>
+            ) : (
+              <div className="divide-y divide-gray-700">
+                {discussions.slice(0, 3).map((discussion) => (
+                  <div
+                    key={discussion.id}
+                    className="py-3 flex justify-between items-center group cursor-pointer"
+                  >
+                    <div className="flex-1 min-w-0 pr-4">
+                      <h4 className="font-semibold text-kadin-white group-hover:text-kadin-gold transition-colors truncate">
+                        {discussion.title}
+                      </h4>
+                      <p className="text-xs text-kadin-slate mt-1">
+                        Posted in '{discussion.category}' by{" "}
+                        {discussion.author_name}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[10px] bg-gray-800 text-kadin-slate px-2 py-0.5 rounded-full">
+                        {discussion.replies_count} replies
+                      </span>
+                      <ChevronRightIcon className="h-5 w-5 text-kadin-slate group-hover:text-kadin-gold transition-colors" />
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
           </Card>
         </div>
-
-        {/* <div className="md:col-span-2 lg:col-span-4">
-                    <Card title="Recent Activity">
-                        {activityLog.length > 0 ? (
-                            <div className="max-h-80 overflow-y-auto divide-y divide-gray-700/50 pr-2">
-                                {activityLog.map((event, index) => (
-                                    <ActivityLogItem key={index} event={event} />
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-kadin-slate text-sm">No recent activity recorded.</p>
-                        )}
-                    </Card>
-                </div> */}
       </div>
     </div>
   );

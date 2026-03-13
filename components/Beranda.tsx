@@ -12,6 +12,7 @@ import KADINersRoomsIcon from "./icons/KADINersRoomsIcon";
 import NewsIcon from "./icons/NewsIcon";
 import MitraIcon from "./icons/MitraIcon";
 import { useNews } from "@/src/hooks/useNews";
+import { useDiscussions } from "@/src/hooks/useDiscussions";
 
 interface BerandaProps {
   setCurrentPage: (page: Page) => void;
@@ -174,7 +175,9 @@ const Beranda: React.FC<BerandaProps> = ({ setCurrentPage }) => {
   const [heroAnimationState, setHeroAnimationState] = useState<
     "enter" | "exit"
   >("enter");
-  const { news, loading } = useNews(3);
+  const { news, loading: newsLoading } = useNews(3);
+  const { discussions, loading: discussionsLoading } = useDiscussions();
+  const latestDiscussions = discussions.slice(0, 3);
 
   useEffect(() => {
     const heroImageInterval = setInterval(() => {
@@ -479,7 +482,7 @@ const Beranda: React.FC<BerandaProps> = ({ setCurrentPage }) => {
               </a>
             </div>
             <div className="space-y-4">
-              {!loading &&
+              {!newsLoading &&
                 news.map((item) => (
                   <div
                     key={item.id}
@@ -530,27 +533,28 @@ const Beranda: React.FC<BerandaProps> = ({ setCurrentPage }) => {
               </a>
             </div>
             <div className="space-y-3">
-              {mockThreads.map((thread) => (
-                <div
-                  key={thread.id}
-                  className="p-4 rounded-lg bg-kadin-navy/40 hover:bg-kadin-navy group/item cursor-pointer border border-transparent hover:border-gray-600 transition-all shadow-inner"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentPage("KADINers Rooms");
-                  }}
-                >
-                  <h4 className="font-semibold text-kadin-white group-hover/item:text-kadin-gold text-xs">
-                    {thread.title}
-                  </h4>
-                  <p className="text-[10px] text-kadin-slate mt-1">
-                    Posted in{" "}
-                    <span className="font-semibold text-kadin-light-slate">
-                      {thread.category}
-                    </span>{" "}
-                    by {thread.author}
-                  </p>
-                </div>
-              ))}
+              {!discussionsLoading &&
+                latestDiscussions.map((thread) => (
+                  <div
+                    key={thread.id}
+                    className="p-4 rounded-lg bg-kadin-navy/40 hover:bg-kadin-navy group/item cursor-pointer border border-transparent hover:border-gray-600 transition-all shadow-inner"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentPage("KADINers Rooms");
+                    }}
+                  >
+                    <h4 className="font-semibold text-kadin-white group-hover/item:text-kadin-gold text-xs">
+                      {thread.title}
+                    </h4>
+                    <p className="text-[10px] text-kadin-slate mt-1">
+                      Posted in{" "}
+                      <span className="font-semibold text-kadin-light-slate">
+                        {thread.category}
+                      </span>{" "}
+                      by {thread.author_name}
+                    </p>
+                  </div>
+                ))}
             </div>
           </div>
         </div>
